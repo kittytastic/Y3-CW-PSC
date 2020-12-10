@@ -1,3 +1,6 @@
+import subprocess
+import shlex
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
@@ -9,6 +12,16 @@ def softPrint(*args, **kwargs):
 
 def overPrint(*args, **kwargs):
     print("\r", *args, **kwargs)
+
+def run_bin_with_args(binary, args):
+    try:
+        processOut = subprocess.run(["./"+binary, *shlex.split(args)], capture_output=True)
+        if processOut.returncode!=0:
+            return (False, processOut.stderr.decode("utf-8"))
+        else:
+            return (True, processOut.stdout.decode("utf-8"))
+    except Exception as e:
+        return (False, str(e))
 
 
 class TestCase():

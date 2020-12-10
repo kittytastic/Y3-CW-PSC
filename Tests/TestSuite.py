@@ -36,11 +36,6 @@ def compile(file_name, destination="test.out", compiler_call="g++ -O3"):
         print(str(e))
         return False
 
-def runTest(args):
-    print("Running Test")
-    time.sleep(3)
-    eprint("Test 1.... ❌")
-
 
 if __name__ =="__main__":
 
