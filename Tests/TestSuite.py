@@ -5,19 +5,14 @@ import subprocess
 import shlex
 import argparse
 
+from Utils import *
+from BasicTests import *
 
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
-def softEprint(*args, **kwargs):
-    print(*args, file=sys.stderr, end="", flush=True, **kwargs)
-
-def softPrint(*args, **kwargs):
-    print(*args, end="", flush=True, **kwargs)
-
-def overPrint(*args, **kwargs):
-    print("\r", *args, **kwargs)
-
+testSuites = {
+    "full": [],
+    "live": [lateralMovementTest]
+}
 
 def compile(file_name, destination="test.out", compiler_call="g++ -O3"):
     softPrint("Compiling...")
@@ -47,18 +42,30 @@ def runTest(args):
     eprint("Test 1.... ❌")
 
 
-
 if __name__ =="__main__":
+
     parser = argparse.ArgumentParser(description='Particles - Test Suite')
     parser.add_argument("file_name")
-    args = parser.parse_args()
+    parser.add_argument("--type", dest="testType", help="Select a test type from: %s"%(",".join(testSuites.keys())),default="live" )
 
-    print(args)
+    args = parser.parse_args()
+    file_name = str(args.file_name)
+    testType = str(args.testType)
+    bin_file_name = "test.out"
 
     print("----------------------------")
     print("|    Running Test Suite    |")
     print("----------------------------")
     print("Target File: %s"%str(args.file_name))
 
-    if not compile(str(args.file_name)): 
+    if not compile(str(args.file_name), bin_file_name): 
         exit()
+
+    if str(args.testType) not in testSuites:
+        print("Error: No suite called \"%s\""%str(args.testType))
+        exit()
+
+    for test in testSuites[str(args.testType)]:
+        test.run_test(bin_file_name)
+
+    
