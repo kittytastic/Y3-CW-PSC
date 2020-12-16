@@ -1,5 +1,5 @@
 from Utils import *
-
+import math
 
 def MoveRight():
     snap_shot_t = 0.01
@@ -9,7 +9,7 @@ def MoveRight():
     sim_setup = SimArgs(snap_shot_t, final_t, dt, init_bodies)
 
     final_bodies = [(10, 0, 0)]
-    expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt))
+    expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=1, dx_min=math.inf)
 
     return (sim_setup, expected_res)
     

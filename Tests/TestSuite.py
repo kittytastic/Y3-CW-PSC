@@ -10,8 +10,8 @@ from BasicTests import *
 
 
 testSuites = {
-    "full": [],
-    "live": [MoveRightTest, MoveDiagTest]
+    "full": [MoveRightTest, MoveDiagTest],
+    "live": [MoveRightTest]
 }
 
 def compile(file_name, destination="test.out", compiler_call="g++ -O3"):

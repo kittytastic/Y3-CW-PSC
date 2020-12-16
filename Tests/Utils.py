@@ -80,10 +80,17 @@ class TestCase(GeneralTestCase):
         if not runtime_res[0]:
             return (False, ("Test ran for %.3fs\n"%elapsed)+res[1])
         
-
-        file_out_res = parseResultFiles() 
-        if not self.expected == file_out_res:
-            return (False, "Paraview files output didn't match expected result")
+        # Get final v_max and dx_max from stdout 
+        runtime_out = runtime_res[1].split("\n")
+        final_out = runtime_out[-4]
+        final_out = final_out.split(",")
+        v_max = float(final_out[4].split("=")[1])
+        dx_max = float(final_out[5].split("=")[1])
+        
+        results = parseResultFiles()
+        results.setOutPart(v_max, dx_max) 
+        if not self.expected == results:
+            return (False, "Output didn't match expected result")
         
         return (True, "   ✔️   (%.2fs)"%elapsed)
         
@@ -124,10 +131,16 @@ def point_arrays_equal(points_1, points_2):
     return True
 
 class SimSolution():
-    def __init__(self, num_bodies, points, steps):
+    def __init__(self, num_bodies, points, steps, v_max = None, dx_min = None):
         self.num_bodies = num_bodies
         self.points = points
         self.steps = steps
+        self.v_max = v_max
+        self.dx_min = dx_min
+
+    def setOutPart(self, v_max, dx_max):
+        self.v_max = v_max
+        self.dx_min = dx_max
 
     def __str__(self):
         outS = "------ SimSolution ------\n"
@@ -137,6 +150,12 @@ class SimSolution():
         return outS
 
     def __eq__(self, other):
+        if not math.isclose(self.v_max, other.v_max):
+            return False
+
+        if not math.isclose(self.dx_min, other.dx_min):
+            return False
+
         if self.num_bodies != other.num_bodies:
             return False
         
