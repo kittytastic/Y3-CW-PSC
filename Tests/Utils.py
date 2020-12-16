@@ -2,7 +2,7 @@ import subprocess
 import shlex
 import xml.etree.ElementTree as ET
 import math
-
+import time
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -54,7 +54,6 @@ class GeneralTestCase():
         print("   ✔️")
     
     def print_success_custom(self, msg):
-        print("   ✔️")
         print(msg)
 
     def print_error(self, error_msg):
@@ -64,6 +63,7 @@ class GeneralTestCase():
         print()
         print(error_msg)
 
+
 class TestCase(GeneralTestCase):
     def __init__(self, name, desc, test_description):
         super(TestCase, self).__init__(name, desc, self.test)
@@ -72,16 +72,20 @@ class TestCase(GeneralTestCase):
     def test(self, bin_name):
         args = self.setup.genArg()
 
+        t0 = time.time()
         runtime_res = run_bin_with_args(bin_name, args)
+        t1 = time.time()
+
+        elapsed = t1-t0
         if not runtime_res[0]:
-            return (False, res[1])
+            return (False, ("Test ran for %.3fs\n"%elapsed)+res[1])
         
 
         file_out_res = parseResultFiles() 
         if not self.expected == file_out_res:
             return (False, "Paraview files output didn't match expected result")
         
-        return (True, None)
+        return (True, "   ✔️   (%.2fs)"%elapsed)
         
 
 
