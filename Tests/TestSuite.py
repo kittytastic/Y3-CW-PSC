@@ -11,7 +11,7 @@ from BasicTests import *
 
 testSuites = {
     "full": [],
-    "live": [lateralMovementTest]
+    "live": [MoveRightTest, MoveDiagTest]
 }
 
 def compile(file_name, destination="test.out", compiler_call="g++ -O3"):
