@@ -186,6 +186,7 @@ void printParaviewSnapshot() {
 
 
 #define SQUARED(e) (e)*(e)
+#define PRINT_PARTICAL(i) printf("Partical[%d]: x(%f, %f, %f) v(%f, %f, %f) mass: %f\n", i, x[i][0], x[i][1], x[i][2], v[i][0], v[i][1], v[i][2], mass[i])
 
 /**
  * This is the main operation you should change in the assignment. You might
@@ -204,11 +205,13 @@ void updateBody() {
   double* force2 = new double[NumberOfBodies];
 
   for(int i=0; i<NumberOfBodies; i++){
+
+    //PRINT_PARTICAL(i);
     force0[i] = 0.0;
     force1[i] = 0.0;
     force2[i] = 0.0;
     for (int j=0; j<NumberOfBodies; j++) {
-      if(i==j) continue;
+      if(i==j){ continue;}
 
       const double distance = sqrt(
         SQUARED(x[i][0]-x[j][0]) +
@@ -231,6 +234,8 @@ void updateBody() {
     v[i][0] = v[i][0] + timeStepSize * force0[i] / mass[i];
     v[i][1] = v[i][1] + timeStepSize * force1[i] / mass[i];
     v[i][2] = v[i][2] + timeStepSize * force2[i] / mass[i];
+
+    //PRINT_PARTICAL(i);
     maxV = std::max( maxV, std::sqrt( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
   }
 
@@ -248,8 +253,9 @@ void updateBody() {
 
       minDx = std::min( minDx, distance );
 
+      //printf("i: %d  j: %d   dx: %f\n", i, j, distance);
       if(distance<=C*(mass[j]+mass[i])){
-        merged = false;
+        merged = true;
         break;
       }else{
         j++;
@@ -257,6 +263,10 @@ void updateBody() {
     }
 
     if(merged){
+      std::cout << "Merging 2 particals" <<std::endl;
+      PRINT_PARTICAL(i);
+      PRINT_PARTICAL(j);
+
       // Merge i and j into i
       v[i][0] = (mass[i]*v[i][0]+mass[j]*v[j][0])/(mass[i]+mass[j]);
       v[i][1] = (mass[i]*v[i][1]+mass[j]*v[j][1])/(mass[i]+mass[j]);
@@ -269,6 +279,9 @@ void updateBody() {
       mass[i] = mass[i]+mass[j];
 
       maxV = std::max( maxV, std::sqrt( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
+
+      //printf("Merged Partical\n");
+      //PRINT_PARTICAL(i);
 
       // Move last body into j and decrement body count
       int lastBody = NumberOfBodies - 1;
