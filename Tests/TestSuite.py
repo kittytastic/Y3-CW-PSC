@@ -7,11 +7,12 @@ import argparse
 
 from Utils import *
 from BasicTests import *
+from CollisionTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, MoveDiagTest],
-    "live": [MoveRightTest]
+    "full": [MoveRightTest, ShortMoveDiagTest],
+    "live": [ShortMoveDiagTest, StationaryColide]
 }
 
 def compile(file_name, destination="test.out", compiler_call="g++ -O3"):
