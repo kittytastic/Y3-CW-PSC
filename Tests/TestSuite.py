@@ -9,12 +9,13 @@ from Utils import *
 from BasicTests import *
 from CollisionTests import *
 from ExperimentalTests import *
+from HybridTests import *
 
 
 testSuites = {
     "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, TwoBodyOrbitTest],
     "live": [ShortMoveDiagTest, StationaryColide],
-    "collide": [StationaryColide],
+    "collide": [StandingCubeColide],
     "gen": [TwoBodyOrbitTest]
 }
 
