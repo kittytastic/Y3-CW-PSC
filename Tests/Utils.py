@@ -27,6 +27,10 @@ def run_bin_with_args(binary, args):
         return (False, str(e))
 
 
+class TestEqError(Exception):
+    pass
+
+
 class GeneralTestCase():
     def __init__(self, name, desc, test_func):
         self.name = name
@@ -89,8 +93,11 @@ class TestCase(GeneralTestCase):
         
         results = parseResultFiles()
         results.setOutPart(v_max, dx_max) 
-        if not self.expected == results:
-            return (False, "Output didn't match expected result")
+
+        try: 
+            AssertSimSolutionEq(self.expected, results)
+        except TestEqError as e:
+            return (False, str(e))
         
         return (True, "   ✔️   (%.2fs)"%elapsed)
         
@@ -109,26 +116,42 @@ def turp_is_approx(turp_1, turp_2):
 
     return True
 
-def point_arrays_equal(points_1, points_2):
-    if len(points_1) != len(points_2):
-        return False
+def AssertPointArraysEqual(expected, observed):
+    if len(expected) != len(observed):
+        raise TestEqError("Point arrays have dirrent length; Expected: %d  Observed: %s"%(len(expected), len(observed)))
 
-    matched = [False] * len(points_2)
+    matched = [False] * len(observed)
 
-    for i in range(len(points_1)):
+    for i in range(len(expected)):
         has_partner = False
         j = 0
-        while j < len(points_2) and not has_partner:
-            if not matched[j] and turp_is_approx(points_1[i], points_2[j]):
+        while j < len(observed) and not has_partner:
+            if not matched[j] and turp_is_approx(expected[i], observed[j]):
                 matched[j] = True
                 has_partner = True
             
             j+=1
         
         if not has_partner:
-            return False
+            raise TestEqError("Expected point is unmatched: %s"%(expected[i]))
     
     return True
+
+
+def AssertSimSolutionEq(expected, observed):
+        if expected.num_bodies != observed.num_bodies:
+            raise TestEqError("num_bodies != num_bodies; Expected: %d  Observed:  %d"%(expected.num_bodies, observed.num_bodies))
+
+        AssertPointArraysEqual(expected.points, observed.points)
+
+        if not math.isclose(expected.v_max, observed.v_max):
+            raise TestEqError("v_max != v_max; Expected: %s  Observed:  %s"%(expected.v_max, observed.v_max))
+
+        if not math.isclose(expected.dx_min, observed.dx_min):
+            raise TestEqError("dx_min != dx_min; Expected: %s  Observed:  %s"%(expected.dx_min, observed.dx_min))
+        
+        return True 
+
 
 class SimSolution():
     def __init__(self, num_bodies, points, steps, v_max = None, dx_min = None):
@@ -149,17 +172,6 @@ class SimSolution():
         outS += "Bodies: %s"%self.points
         return outS
 
-    def __eq__(self, other):
-        if not math.isclose(self.v_max, other.v_max):
-            return False
-
-        if not math.isclose(self.dx_min, other.dx_min):
-            return False
-
-        if self.num_bodies != other.num_bodies:
-            return False
-        
-        return point_arrays_equal(self.points, other.points)
 
 class Body():
     def __init__(self, pos_turp, v_turp, mass):
@@ -175,6 +187,7 @@ class Body():
 
     def asArg(self):
         return "{self.pos[0]:f} {self.pos[1]:f} {self.pos[2]:f} {self.v[0]:f} {self.v[1]:f} {self.v[2]:f} {self.mass:f}".format(self=self)
+
 
 class SimArgs():
     def __init__(self, snap_frequency, final_time, dt, bodies):
