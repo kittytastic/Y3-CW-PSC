@@ -3,8 +3,8 @@ from Utils import *
 
 def StandingCubeCollide():
     snap_shot_t = 0.1
-    final_t = 1.35
-    dt = 0.0000001
+    final_t = 1.4
+    dt = 0.000001
 
     staring_d = 1.5
     init_bodies = [
@@ -25,6 +25,6 @@ def StandingCubeCollide():
     final_bodies = [(0.0, 0.0, 0.0)]
     expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=0, dx_min=math.inf)
 
-    return (sim_setup, expected_res)
+    return {"setup":sim_setup, "expected":expected_res, "error":1e-6}
     
 StandingCubeColide = TestCase("Standing Cube Collision", "Test to see if 6 points around an origin point accelerate and combine", StandingCubeCollide)

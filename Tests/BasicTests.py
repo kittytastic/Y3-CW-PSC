@@ -11,7 +11,7 @@ def MoveRight():
     final_bodies = [(10, 0, 0)]
     expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=1, dx_min=math.inf)
 
-    return (sim_setup, expected_res)
+    return {"setup": sim_setup, "expected":expected_res}
     
 MoveRightTest = TestCase("Move Right", "Test to see if a body moves right", MoveRight)
 
@@ -25,6 +25,6 @@ def ShortMoveDiag():
     final_bodies = [(1, -1, 2)]
     expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=math.sqrt(1+1+4), dx_min=math.inf)
 
-    return (sim_setup, expected_res)
+    return {"setup": sim_setup, "expected":expected_res}
     
 ShortMoveDiagTest = TestCase("Move Diagonally (short)", "Test to see if a body moves diagonally (short)", ShortMoveDiag)

@@ -14,7 +14,7 @@ def TwoCollide():
     final_bodies = [(1e-3, 0, 0)]
     expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=0, dx_min=math.inf)
 
-    return (sim_setup, expected_res)
+    return {"setup": sim_setup, "expected":expected_res}
     
 StationaryColide = TestCase("Stationary 2 Collision", "Test to see if 2 stationary points in collision distance are combined", TwoCollide)
 
@@ -33,7 +33,7 @@ def ThreeCollide():
     final_bodies = [(0, 0, 0)]
     expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=0, dx_min=math.inf)
 
-    return (sim_setup, expected_res)
+    return {"setup": sim_setup, "expected":expected_res}
     
 StationaryThreeColide = TestCase("Stationary 3 Collision", "Test to see if 3 stationary points in collision distance are combined", ThreeCollide)
 
@@ -59,6 +59,6 @@ def CubeCollide():
     final_bodies = [(0, 0, 0)]
     expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=0, dx_min=math.inf)
 
-    return (sim_setup, expected_res)
+    return {"setup": sim_setup, "expected":expected_res}
     
 StationaryCubeColide = TestCase("Stationary Cube Collision", "Test to see if 6 points around a origin combine", CubeCollide)

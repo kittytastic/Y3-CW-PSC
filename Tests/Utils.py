@@ -72,7 +72,10 @@ class GeneralTestCase():
 class TestCase(GeneralTestCase):
     def __init__(self, name, desc, test_description):
         super(TestCase, self).__init__(name, desc, self.test)
-        self.setup, self.expected  = test_description()
+        desc = test_description()
+        self.setup = desc["setup"]
+        self.expected  = desc["expected"]
+        self.error = desc["error"] if "error" in desc else 1e-9
 
     def test(self, bin_name):
         args = self.setup.genArg()
@@ -102,7 +105,7 @@ class TestCase(GeneralTestCase):
         results.setOutPart(v_max, dx_max) 
 
         try: 
-            AssertSimSolutionEq(self.expected, results)
+            AssertSimSolutionEq(self.expected, results, self.error)
         except TestEqError as e:
             return (False, "%s %s"%(verbose_adjustment, str(e)))
         
@@ -113,17 +116,25 @@ class TestCase(GeneralTestCase):
 #####################################
 #              Bodies               #
 #####################################
-def turp_is_approx(turp_1, turp_2):
+
+def smart_is_close(a, b, tol=1e-9):
+    if math.isclose(a,0, abs_tol=1e-9) or math.isclose(b,0, abs_tol=1e-9):
+        # If we are comparing to 0
+        return math.isclose(a,b, abs_tol=tol)
+    else:
+        return math.isclose(a,b,rel_tol=tol)
+
+def turp_is_approx(turp_1, turp_2, allowed_error):
     if len(turp_1) != len(turp_2):
         return False
     
     for i in range(len(turp_1)):
-        if not math.isclose(float(turp_1[i]), float(turp_2[i])):
+        if not smart_is_close(float(turp_1[i]), float(turp_2[i]), tol=allowed_error):
             return False
 
     return True
 
-def AssertPointArraysEqual(expected, observed):
+def AssertPointArraysEqual(expected, observed, allowed_error):
     if len(expected) != len(observed):
         raise TestEqError("Point arrays have dirrent length; Expected: %d  Observed: %d"%(len(expected), len(observed)))
 
@@ -133,7 +144,7 @@ def AssertPointArraysEqual(expected, observed):
         has_partner = False
         j = 0
         while j < len(observed) and not has_partner:
-            if not matched[j] and turp_is_approx(expected[i], observed[j]):
+            if not matched[j] and turp_is_approx(expected[i], observed[j], allowed_error):
                 matched[j] = True
                 has_partner = True
             
@@ -145,16 +156,16 @@ def AssertPointArraysEqual(expected, observed):
     return True
 
 
-def AssertSimSolutionEq(expected, observed):
+def AssertSimSolutionEq(expected, observed, allowed_error):
         if expected.num_bodies != observed.num_bodies:
             raise TestEqError("num_bodies != num_bodies; Expected: %d  Observed:  %d"%(expected.num_bodies, observed.num_bodies))
 
-        AssertPointArraysEqual(expected.points, observed.points)
+        AssertPointArraysEqual(expected.points, observed.points, allowed_error)
 
-        if not math.isclose(expected.v_max, observed.v_max):
+        if not smart_is_close(expected.v_max, observed.v_max, tol=allowed_error):
             raise TestEqError("v_max != v_max; Expected: %s  Observed:  %s"%(expected.v_max, observed.v_max))
 
-        if not math.isclose(expected.dx_min, observed.dx_min):
+        if not smart_is_close(expected.dx_min, observed.dx_min, tol=allowed_error):
             raise TestEqError("dx_min != dx_min; Expected: %s  Observed:  %s"%(expected.dx_min, observed.dx_min))
         
         return True 
