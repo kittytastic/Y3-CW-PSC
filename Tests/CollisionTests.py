@@ -2,7 +2,7 @@ from Utils import *
 
 def TwoCollide():
     snap_shot_t = 1
-    final_t = 1
+    final_t = 2
     dt = 1
     init_bodies = [
         Body((0,0,0), (0,0,0), 1.0),

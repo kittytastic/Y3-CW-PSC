@@ -118,7 +118,7 @@ def turp_is_approx(turp_1, turp_2):
 
 def AssertPointArraysEqual(expected, observed):
     if len(expected) != len(observed):
-        raise TestEqError("Point arrays have dirrent length; Expected: %d  Observed: %s"%(len(expected), len(observed)))
+        raise TestEqError("Point arrays have dirrent length; Expected: %d  Observed: %d"%(len(expected), len(observed)))
 
     matched = [False] * len(observed)
 
@@ -133,7 +133,7 @@ def AssertPointArraysEqual(expected, observed):
             j+=1
         
         if not has_partner:
-            raise TestEqError("Expected point is unmatched: %s"%(expected[i]))
+            raise TestEqError("Expected point is unmatched: %s"%str(expected[i]))
     
     return True
 
