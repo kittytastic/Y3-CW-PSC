@@ -3,6 +3,7 @@ import shlex
 import xml.etree.ElementTree as ET
 import math
 import time
+import os
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -80,9 +81,15 @@ class TestCase(GeneralTestCase):
         runtime_res = run_bin_with_args(bin_name, args)
         t1 = time.time()
 
+        # Would be nice to pipe output instread of output at end... 
+        verbose_adjustment = ""
+        if os.environ.get("VERBOSE")=="T":
+            verbose_adjustment = runtime_res[1]
+            verbose_adjustment += "\n\n[TEST MESSAGE]: "
+
         elapsed = t1-t0
         if not runtime_res[0]:
-            return (False, ("Test ran for %.3fs\n"%elapsed)+res[1])
+            return (False, "%s Test ran for %.3fs\n%s"%(verbose_adjustment, elapsed, runtime_res[1]))
         
         # Get final v_max and dx_max from stdout 
         runtime_out = runtime_res[1].split("\n")
@@ -97,9 +104,9 @@ class TestCase(GeneralTestCase):
         try: 
             AssertSimSolutionEq(self.expected, results)
         except TestEqError as e:
-            return (False, str(e))
+            return (False, "%s %s"%(verbose_adjustment, str(e)))
         
-        return (True, "   ✔️   (%.2fs)"%elapsed)
+        return (True, "%s   ✔️   (%.2fs)"%(verbose_adjustment, elapsed))
         
 
 

@@ -46,10 +46,12 @@ if __name__ =="__main__":
     parser = argparse.ArgumentParser(description='Particles - Test Suite')
     parser.add_argument("file_name")
     parser.add_argument("--type", dest="testType", help="Select a test type from: %s"%(",".join(testSuites.keys())),default="live" )
+    parser.add_argument("-v", dest="verbose", help="Verbose", action='store_true')
 
     args = parser.parse_args()
     file_name = str(args.file_name)
     testType = str(args.testType)
+    os.environ['VERBOSE'] = "T" if args.verbose else "F"
     bin_file_name = "test.out"
 
     print("----------------------------")
