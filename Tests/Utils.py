@@ -78,7 +78,12 @@ class TestCase(GeneralTestCase):
         self.error = desc["error"] if "error" in desc else 1e-9
 
     def test(self, bin_name):
+        
         args = self.setup.genArg()
+        
+        if os.environ.get("VERBOSE")=="T":
+            print()
+            print(args)    
 
         t0 = time.time()
         runtime_res = run_bin_with_args(bin_name, args)
