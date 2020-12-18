@@ -17,5 +17,6 @@ source /opt/intel/oneapi/setvars.sh
 
 ## Start agent
 ```
+ wget https://172.29.146.40:8080/api/collection-agent/download --no-check-certificate
 ~/intel/ProfilerAgent/vtune-agent --owner passphrase_authenticated_user
 ```
