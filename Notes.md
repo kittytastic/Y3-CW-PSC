@@ -17,5 +17,5 @@ source /opt/intel/oneapi/setvars.sh
 
 ## Start agent
 ```
-~/intel/ProfileAgent/vtune-agent --owner passphrase_authenticated_user
+~/intel/ProfilerAgent/vtune-agent --owner passphrase_authenticated_user
 ```
