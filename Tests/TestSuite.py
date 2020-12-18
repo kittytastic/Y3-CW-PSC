@@ -16,7 +16,7 @@ testSuites = {
     "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, TwoBodyOrbitTest, StandingCubeColide],
     "live": [ShortMoveDiagTest, StationaryColide],
     "collide": [StandingCubeColide],
-    "gen": [StandingCubeColide]
+    "gen": [TwoBodyOrbitTest]
 }
 
 def compile(file_name, destination="test.out", compiler_call="g++ -O3"):
