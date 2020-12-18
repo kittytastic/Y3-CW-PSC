@@ -65,11 +65,11 @@ double   minDx;
 
 
 // force0 = force along x direction
-  // force1 = force along y direction
-  // force2 = force along z direction
-  double* force0;
-  double* force1;
-  double* force2;
+// force1 = force along y direction
+// force2 = force along z direction
+double* force0;
+double* force1;
+double* force2;
 
 
 /**
@@ -225,10 +225,10 @@ void updateBody() {
       );
 
       // x,y,z forces acting on particle 0
-      double distance_scale = 1/(distance*distance*distance);
-      double f0 = (x[j][0]-x[i][0]) * mass[j]*mass[i] * distance_scale ;
-      double f1 = (x[j][1]-x[i][1]) * mass[j]*mass[i] * distance_scale ;
-      double f2 = (x[j][2]-x[i][2]) * mass[j]*mass[i] * distance_scale ;
+      double invarient = (mass[j]*mass[i])/(distance*distance*distance);
+      double f0 = (x[j][0]-x[i][0]) * invarient ;
+      double f1 = (x[j][1]-x[i][1]) * invarient ;
+      double f2 = (x[j][2]-x[i][2]) * invarient ;
       
       force0[i] += f0 ;
       force1[i] += f1 ;
@@ -251,7 +251,7 @@ void updateBody() {
   }
 
   int i=0;
-  double C = 10e-2; 
+  const double C = 10e-2;
   while(i<NumberOfBodies){
     int j = i+1;
     bool merged = false;
