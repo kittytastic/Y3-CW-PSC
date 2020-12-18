@@ -107,7 +107,7 @@ class TestCase(GeneralTestCase):
         try: 
             AssertSimSolutionEq(self.expected, results, self.error)
         except TestEqError as e:
-            return (False, "%s %s"%(verbose_adjustment, str(e)))
+            return (False, "%s(%.2fs) %s"%(verbose_adjustment, elapsed, str(e)))
         
         return (True, "%s   ✔️   (%.2fs)"%(verbose_adjustment, elapsed))
         
