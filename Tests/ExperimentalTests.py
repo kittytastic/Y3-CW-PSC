@@ -5,7 +5,7 @@ def TwoBodyOrbit():
     snap_shot_t = 0.01
     final_t = 10
     dt = 0.001
-    init_bodies = [Body((1,0,0), (0,0.4,0), 2.0), Body((-1,0,0), (0,-0.4,0), 2.0)]
+    init_bodies = [Body((1,0,0), (0,0.5,0), 2.0), Body((-1,0,0), (0,-0.5,0), 2.0)]
     sim_setup = SimArgs(snap_shot_t, final_t, dt, init_bodies)
 
     final_bodies = [(1.12599, 0.231844, 0), (-1.12836, -0.231802, 0)]
