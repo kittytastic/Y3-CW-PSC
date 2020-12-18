@@ -209,15 +209,14 @@ void updateBody() {
   maxV   = 0.0;
   minDx  = std::numeric_limits<double>::max();
 
-  
-
   for(int i=0; i<NumberOfBodies; i++){
-
     force0[i] = 0.0;
     force1[i] = 0.0;
     force2[i] = 0.0;
-    for (int j=0; j<NumberOfBodies; j++) {
-      if(i==j){ continue;}
+  }
+
+  for(int i=0; i<NumberOfBodies; i++){
+    for (int j=i+1; j<NumberOfBodies; j++) {
 
       const double distance = sqrt(
         SQUARED(x[i][0]-x[j][0]) +
@@ -227,11 +226,17 @@ void updateBody() {
 
       // x,y,z forces acting on particle 0
       double distance_scale = 1/(distance*distance*distance);
-      force0[i] += (x[j][0]-x[i][0]) * mass[j]*mass[i] * distance_scale ;
-      force1[i] += (x[j][1]-x[i][1]) * mass[j]*mass[i] * distance_scale ;
-      force2[i] += (x[j][2]-x[i][2]) * mass[j]*mass[i] * distance_scale ;
-
+      double f0 = (x[j][0]-x[i][0]) * mass[j]*mass[i] * distance_scale ;
+      double f1 = (x[j][1]-x[i][1]) * mass[j]*mass[i] * distance_scale ;
+      double f2 = (x[j][2]-x[i][2]) * mass[j]*mass[i] * distance_scale ;
       
+      force0[i] += f0 ;
+      force1[i] += f1 ;
+      force2[i] += f2 ;
+
+      force0[j] -= f0 ;
+      force1[j] -= f1 ;
+      force2[j] -= f2 ;
     }
 
     x[i][0] = x[i][0] + timeStepSize * v[i][0];
