@@ -64,6 +64,14 @@ double   maxV;
 double   minDx;
 
 
+// force0 = force along x direction
+  // force1 = force along y direction
+  // force2 = force along z direction
+  double* force0;
+  double* force1;
+  double* force2;
+
+
 /**
  * Set up scenario from the command line.
  *
@@ -81,6 +89,10 @@ void setUp(int argc, char** argv) {
   x    = new double*[NumberOfBodies];
   v    = new double*[NumberOfBodies];
   mass = new double [NumberOfBodies];
+
+  force0 = new double[NumberOfBodies];
+  force1 = new double[NumberOfBodies];
+  force2 = new double[NumberOfBodies];
 
   int readArgument = 1;
 
@@ -185,6 +197,9 @@ void printParaviewSnapshot() {
 
 
 
+#define SQUARED(e) (e)*(e)
+#define PRINT_PARTICAL(i) printf("Partical[%d]: x(%f, %f, %f) v(%f, %f, %f) mass: %f\n", i, x[i][0], x[i][1], x[i][2], v[i][0], v[i][1], v[i][2], mass[i])
+
 /**
  * This is the main operation you should change in the assignment. You might
  * want to add a few more variables or helper functions, but this is where the
@@ -194,52 +209,105 @@ void updateBody() {
   maxV   = 0.0;
   minDx  = std::numeric_limits<double>::max();
 
-  // force0 = force along x direction
-  // force1 = force along y direction
-  // force2 = force along z direction
-  double* force0 = new double[NumberOfBodies];
-  double* force1 = new double[NumberOfBodies];
-  double* force2 = new double[NumberOfBodies];
+  
 
-  force0[0] = 0.0;
-  force1[0] = 0.0;
-  force2[0] = 0.0;
+  for(int i=0; i<NumberOfBodies; i++){
 
-  for (int i=1; i<NumberOfBodies; i++) {
-    const double distance = sqrt(
-      (x[0][0]-x[i][0]) * (x[0][0]-x[i][0]) +
-      (x[0][1]-x[i][1]) * (x[0][1]-x[i][1]) +
-      (x[0][2]-x[i][2]) * (x[0][2]-x[i][2])
-    );
+    force0[i] = 0.0;
+    force1[i] = 0.0;
+    force2[i] = 0.0;
+    for (int j=0; j<NumberOfBodies; j++) {
+      if(i==j){ continue;}
 
-    // x,y,z forces acting on particle 0
-    force0[0] += (x[i][0]-x[0][0]) * mass[i]*mass[0] / distance / distance / distance ;
-    force1[0] += (x[i][1]-x[0][1]) * mass[i]*mass[0] / distance / distance / distance ;
-    force2[0] += (x[i][2]-x[0][2]) * mass[i]*mass[0] / distance / distance / distance ;
+      const double distance = sqrt(
+        SQUARED(x[i][0]-x[j][0]) +
+        SQUARED(x[i][1]-x[j][1]) +
+        SQUARED(x[i][2]-x[j][2])
+      );
 
-    minDx = std::min( minDx,distance );
+      // x,y,z forces acting on particle 0
+      double distance_scale = 1/(distance*distance*distance);
+      force0[i] += (x[j][0]-x[i][0]) * mass[j]*mass[i] * distance_scale ;
+      force1[i] += (x[j][1]-x[i][1]) * mass[j]*mass[i] * distance_scale ;
+      force2[i] += (x[j][2]-x[i][2]) * mass[j]*mass[i] * distance_scale ;
+
+      
+    }
+
+    x[i][0] = x[i][0] + timeStepSize * v[i][0];
+    x[i][1] = x[i][1] + timeStepSize * v[i][1];
+    x[i][2] = x[i][2] + timeStepSize * v[i][2];
+
+    v[i][0] = v[i][0] + timeStepSize * force0[i] / mass[i];
+    v[i][1] = v[i][1] + timeStepSize * force1[i] / mass[i];
+    v[i][2] = v[i][2] + timeStepSize * force2[i] / mass[i];
+
+    maxV = std::max( maxV, std::sqrt( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
   }
 
-  x[0][0] = x[0][0] + timeStepSize * v[0][0];
-  x[0][1] = x[0][1] + timeStepSize * v[0][1];
-  x[0][2] = x[0][2] + timeStepSize * v[0][2];
+  int i=0;
+  double C = 10e-2; 
+  while(i<NumberOfBodies){
+    int j = i+1;
+    bool merged = false;
+    while( j<NumberOfBodies && !merged){
+       const double distance = sqrt(
+        SQUARED(x[i][0]-x[j][0]) +
+        SQUARED(x[i][1]-x[j][1]) +
+        SQUARED(x[i][2]-x[j][2])
+      );
 
-  // These are three buggy lines of code that we will use in one of the labs
-//  x[0][3] = x[0][2] + timeStepSize * v[0][2];
-//  x[0][2] = x[0][2] + timeStepSize * v[0][2] / 0.0;
-//  x[50000000][1] = x[0][2] + timeStepSize * v[0][2] / 0.0;
+      minDx = std::min( minDx, distance );
 
-  v[0][0] = v[0][0] + timeStepSize * force0[0] / mass[0];
-  v[0][1] = v[0][1] + timeStepSize * force1[0] / mass[0];
-  v[0][2] = v[0][2] + timeStepSize * force2[0] / mass[0];
+      if(distance<=C*(mass[j]+mass[i])){
+        merged = true;
+        break;
+      }else{
+        j++;
+      }
+    }
 
-  maxV = std::sqrt( v[0][0]*v[0][0] + v[0][1]*v[0][1] + v[0][2]*v[0][2] );
+    if(merged){
+      std::cout << "Merging 2 particals" <<std::endl;
+
+      // Merge i and j into i
+      v[i][0] = (mass[i]*v[i][0]+mass[j]*v[j][0])/(mass[i]+mass[j]);
+      v[i][1] = (mass[i]*v[i][1]+mass[j]*v[j][1])/(mass[i]+mass[j]);
+      v[i][2] = (mass[i]*v[i][2]+mass[j]*v[j][2])/(mass[i]+mass[j]);
+      
+      x[i][0] = (mass[i]*x[i][0]+mass[j]*x[j][0])/(mass[i]+mass[j]);
+      x[i][1] = (mass[i]*x[i][1]+mass[j]*x[j][1])/(mass[i]+mass[j]);
+      x[i][2] = (mass[i]*x[i][2]+mass[j]*x[j][2])/(mass[i]+mass[j]);
+
+      mass[i] = mass[i]+mass[j];
+
+      maxV = std::max( maxV, std::sqrt( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
+
+      // Move last body into j and decrement body count
+      int lastBody = NumberOfBodies - 1;
+      v[j][0] = v[lastBody][0];
+      v[j][1] = v[lastBody][1];
+      v[j][2] = v[lastBody][2];
+      
+      x[j][0] = x[lastBody][0];
+      x[j][1] = x[lastBody][1];
+      x[j][2] = x[lastBody][2];
+      
+      mass[j] = mass[lastBody];
+
+      NumberOfBodies--;
+
+    }else{
+      i++;
+    }
+
+
+  }
+  
 
   t += timeStepSize;
 
-  delete[] force0;
-  delete[] force1;
-  delete[] force2;
+  
 }
 
 
@@ -309,6 +377,10 @@ int main(int argc, char** argv) {
   std::cout << "Position of first remaining object: " << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << std::endl;
 
   closeParaviewVideoFile();
+
+  delete[] force0;
+  delete[] force1;
+  delete[] force2;
 
   return 0;
 }
