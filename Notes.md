@@ -1,9 +1,12 @@
 # vTune
 ## Compile
 ```
-g++ -O3 -fopenmp -g ../Solutions/base_af.cpp
+g++ -O3 -fopenmp -fopt-info-vec -g ../Solutions/base_af.cpp
 ```
 
+```
+icpc -O3 -fopenmp -qopt-report-phase=vec -qopt-report=2 -xhost --std=c++0x -g ./step2.cpp
+```
 
 ## Source
 ```
