@@ -13,8 +13,8 @@ from HybridTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, TwoBodyOrbitTest, StandingCubeColide],
-    "live": [ShortMoveDiagTest, StationaryColide],
+    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, TwoBodyOrbitTest, StandingCubeColide, FiftyBodyTest],
+    "live": [ShortMoveDiagTest],
     "collide": [StandingCubeColide],
     "gen": [FiftyBodyTest]
 }

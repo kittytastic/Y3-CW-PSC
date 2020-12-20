@@ -206,8 +206,8 @@ void printParaviewSnapshot() {
  * magic happens.
  */
 void updateBody() {
-  maxV   = 0.0;
-  minDx  = std::numeric_limits<double>::max();
+  double maxVSquared   = 0.0;
+  double minDxSquared  = std::numeric_limits<double>::max();
 
   for(int i=0; i<NumberOfBodies; i++){
     force0[i] = 0.0;
@@ -247,7 +247,7 @@ void updateBody() {
     v[i][1] = v[i][1] + timeStepSize * force1[i] / mass[i];
     v[i][2] = v[i][2] + timeStepSize * force2[i] / mass[i];
 
-    maxV = std::max( maxV, std::sqrt( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
+    maxVSquared = std::max( maxVSquared, ( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2])));
   }
 
   int i=0;
@@ -256,15 +256,12 @@ void updateBody() {
     int j = i+1;
     bool merged = false;
     while( j<NumberOfBodies && !merged){
-       const double distance = sqrt(
-        SQUARED(x[i][0]-x[j][0]) +
-        SQUARED(x[i][1]-x[j][1]) +
-        SQUARED(x[i][2]-x[j][2])
-      );
+      const double distanceSquared = SQUARED(x[i][0]-x[j][0]) + SQUARED(x[i][1]-x[j][1]) + SQUARED(x[i][2]-x[j][2]);
+      //const double distance = sqrt(dSquared);
 
-      minDx = std::min( minDx, distance );
+      minDxSquared = std::min( minDxSquared, distanceSquared );
 
-      if(distance<=C*(mass[j]+mass[i])){
+      if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
         merged = true;
         break;
       }else{
@@ -273,7 +270,6 @@ void updateBody() {
     }
 
     if(merged){
-      std::cout << "Merging 2 particals" <<std::endl;
 
       // Merge i and j into i
       v[i][0] = (mass[i]*v[i][0]+mass[j]*v[j][0])/(mass[i]+mass[j]);
@@ -286,7 +282,7 @@ void updateBody() {
 
       mass[i] = mass[i]+mass[j];
 
-      maxV = std::max( maxV, std::sqrt( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
+      maxVSquared = std::max( maxVSquared, ( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
 
       // Move last body into j and decrement body count
       int lastBody = NumberOfBodies - 1;
@@ -305,14 +301,20 @@ void updateBody() {
     }else{
       i++;
     }
-
-
   }
   
 
   t += timeStepSize;
 
-  
+  //maxV   = 0.0;
+  //minDx  = std::numeric_limits<double>::max();
+
+  //maxV = std::max(std::sqrt(maxVSquared), maxV);
+  maxV = std::sqrt(maxVSquared);
+  //minDx = std::min(std::sqrt(minDxSquared), minDx);
+  //printf("minDX %f\n",(maxVSquared));
+  minDx = minDxSquared==std::numeric_limits<double>::max()?std::numeric_limits<double>::max():std::sqrt(minDxSquared);
+
 }
 
 
