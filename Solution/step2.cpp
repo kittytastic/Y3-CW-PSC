@@ -64,12 +64,11 @@ double   maxV;
 double   minDx;
 
 
-// force0 = force along x direction
-// force1 = force along y direction
-// force2 = force along z direction
-double* force0;
-double* force1;
-double* force2;
+/**
+ * Pre-define force var 
+ */
+double** force;
+
 
 
 /**
@@ -90,9 +89,8 @@ void setUp(int argc, char** argv) {
   v    = new double*[NumberOfBodies];
   mass = new double [NumberOfBodies];
 
-  force0 = new double[NumberOfBodies];
-  force1 = new double[NumberOfBodies];
-  force2 = new double[NumberOfBodies];
+  force = new double*[NumberOfBodies];
+  
 
   int readArgument = 1;
 
@@ -103,6 +101,8 @@ void setUp(int argc, char** argv) {
   for (int i=0; i<NumberOfBodies; i++) {
     x[i] = new double[3];
     v[i] = new double[3];
+
+    force[i] = new double[3];
 
     x[i][0] = std::stof(argv[readArgument]); readArgument++;
     x[i][1] = std::stof(argv[readArgument]); readArgument++;
@@ -199,7 +199,7 @@ void printParaviewSnapshot() {
 
 #define SQUARED(e) (e)*(e)
 #define PRINT_PARTICAL(i) printf("Partical[%d]: x(%f, %f, %f) v(%f, %f, %f) mass: %f\n", i, x[i][0], x[i][1], x[i][2], v[i][0], v[i][1], v[i][2], mass[i])
-
+//#define VECTOR_LOOP(index, f) for(int index=0; index<3; index++){f}
 /**
  * This is the main operation you should change in the assignment. You might
  * want to add a few more variables or helper functions, but this is where the
@@ -209,43 +209,42 @@ void updateBody() {
   double maxVSquared   = 0.0;
   double minDxSquared  = std::numeric_limits<double>::max();
 
+  // Zero forces array
+  #pragma omp simd
   for(int i=0; i<NumberOfBodies; i++){
-    force0[i] = 0.0;
-    force1[i] = 0.0;
-    force2[i] = 0.0;
+    for(int dim =0; dim<3; dim++){
+     force[i][dim]=0.0;
+    }
   }
 
   for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
+      /// Calculate i,j distance
       const double distance = sqrt(
         SQUARED(x[i][0]-x[j][0]) +
         SQUARED(x[i][1]-x[j][1]) +
         SQUARED(x[i][2]-x[j][2])
       );
 
-      // x,y,z forces acting on particle 0
-      double invarient = (mass[j]*mass[i])/(distance*distance*distance);
-      double f0 = (x[j][0]-x[i][0]) * invarient ;
-      double f1 = (x[j][1]-x[i][1]) * invarient ;
-      double f2 = (x[j][2]-x[i][2]) * invarient ;
-      
-      force0[i] += f0 ;
-      force1[i] += f1 ;
-      force2[i] += f2 ;
+      // Calculate Forces
+      const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
 
-      force0[j] -= f0 ;
-      force1[j] -= f1 ;
-      force2[j] -= f2 ;
+      #pragma omp simd
+      for(int dim=0; dim<3; dim++){
+        double f = (x[j][dim]-x[i][dim]) * invarient;
+        force[i][dim] += f;
+        force[j][dim] -= f;
+      }
+      
     }
 
-    x[i][0] = x[i][0] + timeStepSize * v[i][0];
-    x[i][1] = x[i][1] + timeStepSize * v[i][1];
-    x[i][2] = x[i][2] + timeStepSize * v[i][2];
-
-    v[i][0] = v[i][0] + timeStepSize * force0[i] / mass[i];
-    v[i][1] = v[i][1] + timeStepSize * force1[i] / mass[i];
-    v[i][2] = v[i][2] + timeStepSize * force2[i] / mass[i];
+    // Incremet x and v
+    #pragma omp simd
+    for(int dim=0; dim<3; dim++){
+      x[i][dim] += timeStepSize * v[i][dim];
+      v[i][dim] += timeStepSize * force[i][dim] / mass[i];
+    }
 
     maxVSquared = std::max( maxVSquared, ( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2])));
   }
@@ -384,10 +383,6 @@ int main(int argc, char** argv) {
   std::cout << "Position of first remaining object: " << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << std::endl;
 
   closeParaviewVideoFile();
-
-  delete[] force0;
-  delete[] force1;
-  delete[] force2;
 
   return 0;
 }
