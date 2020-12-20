@@ -19,7 +19,7 @@ testSuites = {
     "gen": [FiftyBodyTest]
 }
 
-def compile(file_name, destination="test.out", compiler_call="g++ -O3"):
+def compile(file_name, destination="test.out", compiler_call="g++ -O3 -fopenmp"):
     softPrint("Compiling...")
     success = True    
     try:
