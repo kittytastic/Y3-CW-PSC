@@ -1,7 +1,7 @@
 # vTune
 ## Compile
 ```
-gcc -O3 -g ../Source/base_af.cpp
+g++ -O3 -fopenmp -g ../Solutions/base_af.cpp
 ```
 
 
