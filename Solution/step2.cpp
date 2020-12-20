@@ -33,24 +33,51 @@ double tPlotDelta = 0;
 int NumberOfBodies = 0;
 
 
-
 #define CACHE_LINE 64
 struct alignas(CACHE_LINE) AlignedTriple {
   double _[3];
 };
 
 
+class VectorArray {
+  private:
+    size_t length;
+    AlignedTriple ** data;
+  public:
+    VectorArray(size_t length){
+        this->length = length;
+        data = new AlignedTriple*[length];
+        for(size_t i = 0; i<length; i++){
+          data[i] = new AlignedTriple();
+        }
+    }
+
+    ~VectorArray(){
+      for(size_t i=0; i<length; i++){
+        delete data[i];
+      }
+
+      delete[] data;
+    }
+
+    double & operator()(int x, int y){
+      return (*data[x])._[y];
+    };
+};
+
+
+
 /**
  * Pointer to pointers. Each pointer in turn points to three coordinates, i.e.
  * each pointer represents one molecule/particle/body.
  */
-AlignedTriple** x;
-
+VectorArray* x;
+//VectorArray& x;
 /**
  * Equivalent to x storing the velocities.
  */
-AlignedTriple** v;
-
+VectorArray* v;
+//VectorArray& v;
 /**
  * One mass entry per molecule/particle.
  */
@@ -75,8 +102,13 @@ double   minDx;
 /**
  * Force experienced by a particle.
  */
-AlignedTriple** force;
+VectorArray* force;
+//VectorArray& force;
 
+
+#define X(a,b) (*x)(a,b)
+#define V(a,b) (*v)(a,b)
+#define FORCE(a,b) (*force)(a,b)
 
 
 /**
@@ -93,12 +125,19 @@ AlignedTriple** force;
 void setUp(int argc, char** argv) {
   NumberOfBodies = (argc-4) / 7;
 
-  x    = new AlignedTriple*[NumberOfBodies];
-  v    = new AlignedTriple*[NumberOfBodies];
+  //x    = new AlignedTriple*[NumberOfBodies];
+  //v    = new AlignedTriple*[NumberOfBodies];
   mass = new double [NumberOfBodies];
 
-  force = new AlignedTriple*[NumberOfBodies];
+  //force = new AlignedTriple*[NumberOfBodies];
   
+  x = new VectorArray(NumberOfBodies);
+  v = new VectorArray(NumberOfBodies);
+  force = new VectorArray(NumberOfBodies);
+
+  //x = *pX;
+  //v = *pV;
+  //force = *pForce;
 
   int readArgument = 1;
 
@@ -107,18 +146,17 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i=0; i<NumberOfBodies; i++) {
-    x[i] = new AlignedTriple();
-    v[i] = new AlignedTriple();
+    //x[i] = new AlignedTriple();
+    //v[i] = new AlignedTriple();
+    //force[i] = new AlignedTriple();
 
-    force[i] = new AlignedTriple();
-
-    (*x[i])._[0] = std::stof(argv[readArgument]); readArgument++;
-    (*x[i])._[1] = std::stof(argv[readArgument]); readArgument++;
-    (*x[i])._[2] = std::stof(argv[readArgument]); readArgument++;
-
-    (*v[i])._[0] = std::stof(argv[readArgument]); readArgument++;
-    (*v[i])._[1] = std::stof(argv[readArgument]); readArgument++;
-    (*v[i])._[2] = std::stof(argv[readArgument]); readArgument++;
+    X(i, 0) = std::stof(argv[readArgument]); readArgument++;
+    X(i, 1) = std::stof(argv[readArgument]); readArgument++;
+    X(i, 2) = std::stof(argv[readArgument]); readArgument++;
+    
+    V(i, 0) = std::stof(argv[readArgument]); readArgument++;
+    V(i, 1) = std::stof(argv[readArgument]); readArgument++;
+    V(i, 2) = std::stof(argv[readArgument]); readArgument++;
 
     mass[i] = std::stof(argv[readArgument]); readArgument++;
 
@@ -186,11 +224,11 @@ void printParaviewSnapshot() {
 //      << "   <DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">";
 
   for (int i=0; i<NumberOfBodies; i++) {
-    out << (*x[i])._[0]
+    out << X(i, 0)
         << " "
-        << (*x[i])._[1]
+        << X(i, 1)
         << " "
-        << (*x[i])._[2]
+        << X(i, 2)
         << " ";
   }
 
@@ -222,7 +260,7 @@ void updateBody() {
   #pragma omp simd
   for(int i=0; i<NumberOfBodies; i++){
     for(int dim =0; dim<3; dim++){
-     (*force[i])._[dim]=0.0;
+     FORCE(i, dim) = 0.0;
     }
   }
 
@@ -231,9 +269,9 @@ void updateBody() {
 
       /// Calculate i,j distance
       const double distance = sqrt(
-        SQUARED((*x[i])._[0]-(*x[j])._[0]) +
-        SQUARED((*x[i])._[1]-(*x[j])._[1]) +
-        SQUARED((*x[i])._[2]-(*x[j])._[2])
+        SQUARED(X(i, 0)-X(j, 0)) +
+        SQUARED(X(i, 1)-X(j ,1)) +
+        SQUARED(X(i, 2)-X(j, 2))
       );
 
       // Calculate Forces
@@ -241,9 +279,9 @@ void updateBody() {
 
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
-        double f = ((*x[j])._[dim]-(*x[i])._[dim]) * invarient;
-        (*force[i])._[dim] += f;
-        (*force[j])._[dim] -= f;
+        double f = (X(j, dim)-X(i, dim)) * invarient;
+        FORCE(i, dim) += f;
+        FORCE(j, dim) -= f;
       }
       
     }
@@ -251,11 +289,11 @@ void updateBody() {
     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      (*x[i])._[dim] += timeStepSize * (*v[i])._[dim];
-      (*v[i])._[dim] += timeStepSize * (*force[i])._[dim] / mass[i];
+      X(i, dim) += timeStepSize * V(i,dim);
+      V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
     }
 
-    maxVSquared = std::max( maxVSquared, ( SQUARED((*v[i])._[0]) + SQUARED((*v[i])._[1]) + SQUARED((*v[i])._[2])));
+    maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
   }
 
   int i=0;
@@ -264,7 +302,7 @@ void updateBody() {
     int j = i+1;
     bool merged = false;
     while( j<NumberOfBodies && !merged){
-      const double distanceSquared = SQUARED((*x[i])._[0]-(*x[j])._[0]) + SQUARED((*x[i])._[1]-(*x[j])._[1]) + SQUARED((*x[i])._[2]-(*x[j])._[2]);
+      const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
       //const double distance = sqrt(dSquared);
 
       minDxSquared = std::min( minDxSquared, distanceSquared );
@@ -280,27 +318,27 @@ void updateBody() {
     if(merged){
 
       // Merge i and j into i
-      (*v[i])._[0] = (mass[i]*(*v[i])._[0]+mass[j]*(*v[j])._[0])/(mass[i]+mass[j]);
-      (*v[i])._[1] = (mass[i]*(*v[i])._[1]+mass[j]*(*v[j])._[1])/(mass[i]+mass[j]);
-      (*v[i])._[2] = (mass[i]*(*v[i])._[2]+mass[j]*(*v[j])._[2])/(mass[i]+mass[j]);
+      V(i, 0) = (mass[i]*V(i, 0)+mass[j]*V(j, 0))/(mass[i]+mass[j]);
+      V(i, 1) = (mass[i]*V(i, 1)+mass[j]*V(j, 1))/(mass[i]+mass[j]);
+      V(i, 2) = (mass[i]*V(i, 2)+mass[j]*V(j, 2))/(mass[i]+mass[j]);
       
-      (*x[i])._[0] = (mass[i]*(*x[i])._[0]+mass[j]*(*x[j])._[0])/(mass[i]+mass[j]);
-      (*x[i])._[1] = (mass[i]*(*x[i])._[1]+mass[j]*(*x[j])._[1])/(mass[i]+mass[j]);
-      (*x[i])._[2] = (mass[i]*(*x[i])._[2]+mass[j]*(*x[j])._[2])/(mass[i]+mass[j]);
+      X(i, 0) = (mass[i]*X(i, 0)+mass[j]*X(j, 0))/(mass[i]+mass[j]);
+      X(i, 1) = (mass[i]*X(i, 1)+mass[j]*X(j, 1))/(mass[i]+mass[j]);
+      X(i, 2) = (mass[i]*X(i, 2)+mass[j]*X(j, 2))/(mass[i]+mass[j]);
 
       mass[i] = mass[i]+mass[j];
 
-      maxVSquared = std::max( maxVSquared, ( SQUARED((*v[i])._[0]) + SQUARED((*v[i])._[1]) + SQUARED((*v[i])._[2]) ));
+      maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
 
       // Move last body into j and decrement body count
       int lastBody = NumberOfBodies - 1;
-      (*v[j])._[0] = (*v[lastBody])._[0];
-      (*v[j])._[1] = (*v[lastBody])._[1];
-      (*v[j])._[2] = (*v[lastBody])._[2];
-      
-      (*x[j])._[0] = (*x[lastBody])._[0];
-      (*x[j])._[1] = (*x[lastBody])._[1];
-      (*x[j])._[2] = (*x[lastBody])._[2];
+      V(j, 0) = V(lastBody, 0);
+      V(j, 1) = V(lastBody, 1);
+      V(j, 2) = V(lastBody, 2);
+
+      X(j, 0) = X(lastBody, 0);
+      X(j, 1) = X(lastBody, 1);
+      X(j, 2) = X(lastBody, 2);
       
       mass[j] = mass[lastBody];
 
@@ -389,7 +427,7 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "Number of remaining objects: " << NumberOfBodies << std::endl;
-  std::cout << "Position of first remaining object: " << (*x[0])._[0] << ", " << (*x[0])._[1] << ", " << (*x[0])._[2] << std::endl;
+  std::cout << "Position of first remaining object: " << X(0, 0) << ", " << X(0, 1) << ", " << X(0, 2) << std::endl;
 
   closeParaviewVideoFile();
 
