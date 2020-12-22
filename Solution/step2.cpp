@@ -61,6 +61,8 @@ class VectorArray {
     }
 
     double & operator()(int x, int y){
+      // %15 many loads and stuff
+      // leaq -> movq -> vmovupdx -> vmovupdx -> vmovsdq
       return (*data[x])._[y];
     };
 };
@@ -267,6 +269,7 @@ void updateBody() {
   for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
+      // FASTER - 7%
       /// Calculate i,j distance
       const double distance = sqrt(
         SQUARED(X(i, 0)-X(j, 0)) +
@@ -275,6 +278,8 @@ void updateBody() {
       );
 
       // Calculate Forces
+      // D^2? * D
+      // Remove div
       const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
 
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
@@ -289,10 +294,13 @@ void updateBody() {
     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
+      // 0.2%
       X(i, dim) += timeStepSize * V(i,dim);
+      // Remove div 4.5%
       V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
     }
 
+    // 0.6%
     maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
   }
 
@@ -302,11 +310,16 @@ void updateBody() {
     int j = i+1;
     bool merged = false;
     while( j<NumberOfBodies && !merged){
+
+      // V this %8
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
       //const double distance = sqrt(dSquared);
 
+      // Yuck %7.2
       minDxSquared = std::min( minDxSquared, distanceSquared );
 
+
+      // V yuck %8.5
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
         merged = true;
         break;
@@ -318,6 +331,7 @@ void updateBody() {
     if(merged){
 
       // Merge i and j into i
+      // V to tidy - no speed
       V(i, 0) = (mass[i]*V(i, 0)+mass[j]*V(j, 0))/(mass[i]+mass[j]);
       V(i, 1) = (mass[i]*V(i, 1)+mass[j]*V(j, 1))/(mass[i]+mass[j]);
       V(i, 2) = (mass[i]*V(i, 2)+mass[j]*V(j, 2))/(mass[i]+mass[j]);
