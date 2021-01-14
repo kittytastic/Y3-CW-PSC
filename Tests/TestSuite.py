@@ -13,10 +13,11 @@ from HybridTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, TwoBodyOrbitTest, StandingCubeColide, FiftyBodyTest],
+    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, FiftyBodyTest],
     "live": [ShortMoveDiagTest],
     "collide": [StandingCubeColide],
-    "gen": [FiftyBodyTest]
+    "gen": [FiftyBodyTest],
+    "broken": [TwoBodyOrbitTest]
 }
 
 def compile(file_name, destination="test.out", compiler_call="g++ -O3 -fopenmp"):
