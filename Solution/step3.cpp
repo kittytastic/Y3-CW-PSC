@@ -250,7 +250,7 @@ void printParaviewSnapshot() {
 
 
 
-void mergeParticales(double & maxVSquared, double &minDxSquared){
+inline void mergeParticales(double & maxVSquared, double &minDxSquared){
     // Check and merge
   int i=0;
   const double C = 10e-2;
@@ -305,24 +305,9 @@ void mergeParticales(double & maxVSquared, double &minDxSquared){
   }
 }
 
-/**
- * This is the main operation you should change in the assignment. You might
- * want to add a few more variables or helper functions, but this is where the
- * magic happens.
- */
-void updateBody() {
-  double maxVSquared   = 0.0;
-  double minDxSquared  = std::numeric_limits<double>::max();
 
-  // Zero forces array
-  #pragma omp simd
-  for(int i=0; i<NumberOfBodies; i++){
-    for(int dim =0; dim<3; dim++){
-     FORCE(i, dim) = 0.0;
-    }
-  }
-
-  for(int i=0; i<NumberOfBodies; i++){
+inline void takeTimeStep(double & maxVSquared){
+   for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
       /// Calculate i,j distance
@@ -353,6 +338,26 @@ void updateBody() {
 
     maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
   }
+}
+
+/**
+ * This is the main operation you should change in the assignment. You might
+ * want to add a few more variables or helper functions, but this is where the
+ * magic happens.
+ */
+void updateBody() {
+  double maxVSquared   = 0.0;
+  double minDxSquared  = std::numeric_limits<double>::max();
+
+  // Zero forces array
+  #pragma omp simd
+  for(int i=0; i<NumberOfBodies; i++){
+    for(int dim =0; dim<3; dim++){
+     FORCE(i, dim) = 0.0;
+    }
+  }
+
+  takeTimeStep(maxVSquared);
 
   mergeParticales(maxVSquared, minDxSquared);
   
