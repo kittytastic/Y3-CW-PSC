@@ -249,56 +249,9 @@ void printParaviewSnapshot() {
 #define PRINT_PARTICAL(i) printf("Partical[%d]: x(%f, %f, %f) v(%f, %f, %f) mass: %f\n", i, x[i][0], x[i][1], x[i][2], v[i][0], v[i][1], v[i][2], mass[i])
 
 
-/**
- * This is the main operation you should change in the assignment. You might
- * want to add a few more variables or helper functions, but this is where the
- * magic happens.
- */
-void updateBody() {
-  double maxVSquared   = 0.0;
-  double minDxSquared  = std::numeric_limits<double>::max();
 
-  // Zero forces array
-  #pragma omp simd
-  for(int i=0; i<NumberOfBodies; i++){
-    for(int dim =0; dim<3; dim++){
-     FORCE(i, dim) = 0.0;
-    }
-  }
-
-  for(int i=0; i<NumberOfBodies; i++){
-    for (int j=i+1; j<NumberOfBodies; j++) {
-
-      /// Calculate i,j distance
-      const double distance = sqrt(
-        SQUARED(X(i, 0)-X(j, 0)) +
-        SQUARED(X(i, 1)-X(j ,1)) +
-        SQUARED(X(i, 2)-X(j, 2))
-      );
-
-      // Calculate Forces
-      const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
-
-      #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
-      for(int dim=0; dim<3; dim++){
-        double f = (X(j, dim)-X(i, dim)) * invarient;
-        FORCE(i, dim) += f;
-        FORCE(j, dim) -= f;
-      }
-      
-    }
-
-    // Incremet x and v
-    #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
-    for(int dim=0; dim<3; dim++){
-      X(i, dim) += timeStepSize * V(i,dim);
-      V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
-    }
-
-    maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
-  }
-
-  // Check and merge
+void mergeParticales(double & maxVSquared, double &minDxSquared){
+    // Check and merge
   int i=0;
   const double C = 10e-2;
   while(i<NumberOfBodies){
@@ -350,6 +303,58 @@ void updateBody() {
       i++;
     }
   }
+}
+
+/**
+ * This is the main operation you should change in the assignment. You might
+ * want to add a few more variables or helper functions, but this is where the
+ * magic happens.
+ */
+void updateBody() {
+  double maxVSquared   = 0.0;
+  double minDxSquared  = std::numeric_limits<double>::max();
+
+  // Zero forces array
+  #pragma omp simd
+  for(int i=0; i<NumberOfBodies; i++){
+    for(int dim =0; dim<3; dim++){
+     FORCE(i, dim) = 0.0;
+    }
+  }
+
+  for(int i=0; i<NumberOfBodies; i++){
+    for (int j=i+1; j<NumberOfBodies; j++) {
+
+      /// Calculate i,j distance
+      const double distance = sqrt(
+        SQUARED(X(i, 0)-X(j, 0)) +
+        SQUARED(X(i, 1)-X(j ,1)) +
+        SQUARED(X(i, 2)-X(j, 2))
+      );
+
+      // Calculate Forces
+      const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
+
+      #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
+      for(int dim=0; dim<3; dim++){
+        double f = (X(j, dim)-X(i, dim)) * invarient;
+        FORCE(i, dim) += f;
+        FORCE(j, dim) -= f;
+      }
+      
+    }
+
+    // Incremet x and v
+    #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
+    for(int dim=0; dim<3; dim++){
+      X(i, dim) += timeStepSize * V(i,dim);
+      V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
+    }
+
+    maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
+  }
+
+  mergeParticales(maxVSquared, minDxSquared);
   
 
   t += timeStepSize;
