@@ -74,12 +74,14 @@ class VectorArray {
  * each pointer represents one molecule/particle/body.
  */
 VectorArray* x;
-//VectorArray& x;
+VectorArray* x_step;
+
 /**
  * Equivalent to x storing the velocities.
  */
 VectorArray* v;
-//VectorArray& v;
+VectorArray* v_step;
+
 /**
  * One mass entry per molecule/particle.
  */
@@ -89,6 +91,7 @@ double*  mass;
  * Global time step size used.
  */
 double   timeStepSize = 0.0;
+double   halfTimeStepSize = 0.0;
 
 /**
  * Maximum velocity of all particles.
@@ -105,12 +108,17 @@ double   minDx;
  * Force experienced by a particle.
  */
 VectorArray* force;
-//VectorArray& force;
+VectorArray* force_step;
+
 
 
 #define X(a,b) (*x)(a,b)
 #define V(a,b) (*v)(a,b)
 #define FORCE(a,b) (*force)(a,b)
+
+#define X_STEP(a,b) (*x_step)(a,b)
+#define V_STEP(a,b) (*v_step)(a,b)
+#define FORCE_STEP(a,b) (*force_step)(a,b)
 
 
 /**
@@ -127,25 +135,25 @@ VectorArray* force;
 void setUp(int argc, char** argv) {
   NumberOfBodies = (argc-4) / 7;
 
-  //x    = new AlignedTriple*[NumberOfBodies];
-  //v    = new AlignedTriple*[NumberOfBodies];
+
   mass = new double [NumberOfBodies];
 
-  //force = new AlignedTriple*[NumberOfBodies];
-  
   x = new VectorArray(NumberOfBodies);
   v = new VectorArray(NumberOfBodies);
   force = new VectorArray(NumberOfBodies);
 
-  //x = *pX;
-  //v = *pV;
-  //force = *pForce;
+  x_step = new VectorArray(NumberOfBodies);
+  v_step = new VectorArray(NumberOfBodies);
+  force_step = new VectorArray(NumberOfBodies);
+
+  
 
   int readArgument = 1;
 
   tPlotDelta   = std::stof(argv[readArgument]); readArgument++;
   tFinal       = std::stof(argv[readArgument]); readArgument++;
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
+  halfTimeStepSize = timeStepSize * 0.5;
 
   for (int i=0; i<NumberOfBodies; i++) {
     //x[i] = new AlignedTriple();
@@ -306,7 +314,7 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
 }
 
 
-inline void takeTimeStep(double & maxVSquared){
+inline void takeFirstStep(){
    for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
@@ -323,6 +331,39 @@ inline void takeTimeStep(double & maxVSquared){
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
         double f = (X(j, dim)-X(i, dim)) * invarient;
+        FORCE_STEP(i, dim) += f;
+        FORCE_STEP(j, dim) -= f;
+      }
+      
+    }
+
+    // Incremet x and v
+    #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
+    for(int dim=0; dim<3; dim++){
+      X_STEP(i, dim) = X(i, dim) + halfTimeStepSize * V(i,dim);
+      V_STEP(i, dim) = V(i, dim) + halfTimeStepSize * FORCE_STEP(i, dim) / mass[i];
+    }
+
+  }
+}
+
+inline void takeSecondStep(double & maxVSquared){
+   for(int i=0; i<NumberOfBodies; i++){
+    for (int j=i+1; j<NumberOfBodies; j++) {
+
+      /// Calculate i,j distance
+      const double distance = sqrt(
+        SQUARED(X_STEP(i, 0)-X_STEP(j, 0)) +
+        SQUARED(X_STEP(i, 1)-X_STEP(j ,1)) +
+        SQUARED(X_STEP(i, 2)-X_STEP(j, 2))
+      );
+
+      // Calculate Forces
+      const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
+
+      #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
+      for(int dim=0; dim<3; dim++){
+        double f = (X_STEP(j, dim)-X_STEP(i, dim)) * invarient;
         FORCE(i, dim) += f;
         FORCE(j, dim) -= f;
       }
@@ -354,10 +395,12 @@ void updateBody() {
   for(int i=0; i<NumberOfBodies; i++){
     for(int dim =0; dim<3; dim++){
      FORCE(i, dim) = 0.0;
+     FORCE_STEP(i, dim) = 0.0;
     }
   }
 
-  takeTimeStep(maxVSquared);
+  takeFirstStep();
+  takeSecondStep(maxVSquared);
 
   mergeParticales(maxVSquared, minDxSquared);
   

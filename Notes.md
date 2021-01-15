@@ -23,3 +23,11 @@ source /opt/intel/oneapi/setvars.sh
  wget https://172.29.146.40:8080/api/collection-agent/download --no-check-certificate
 ~/intel/ProfilerAgent/vtune-agent --owner passphrase_authenticated_user
 ```
+
+
+
+https://www.ctcms.nist.gov/~langer/oof2man/RegisteredClass-RK2.html
+https://www.ctcms.nist.gov/~langer/oof2man/RegisteredClass-ForwardEuler.html#Eqn-Augmented
+https://web.mit.edu/10.001/Web/Course_Notes/Differential_Equations_Notes/node5.html
+
+https://lpsa.swarthmore.edu/NumInt/NumIntSecond.html
