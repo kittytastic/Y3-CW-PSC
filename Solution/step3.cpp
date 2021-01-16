@@ -345,7 +345,7 @@ inline void takeFirstStep(){
   }
 }
 
-inline void takeSecondStep(double & maxVSquared){
+inline void takeSecondStep(){
    for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
@@ -375,6 +375,12 @@ inline void takeSecondStep(double & maxVSquared){
       V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
     }
 
+    
+  }
+}
+
+inline void setMaxV(double & maxVSquared){
+  for(int i =0; i<NumberOfBodies; i++){
     maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
   }
 }
@@ -395,6 +401,8 @@ void updateBody() {
   double maxVSquared   = 0.0;
   double minDxSquared  = std::numeric_limits<double>::max();
 
+
+  (*x)(1,1);
   // Zero forces array
   #pragma omp simd
   for(int i=0; i<NumberOfBodies; i++){
@@ -413,7 +421,8 @@ void updateBody() {
     }
   }
 
-  takeSecondStep(maxVSquared);
+  takeSecondStep();
+  setMaxV(maxVSquared);
   mergeParticales(maxVSquared, minDxSquared);
   
 
