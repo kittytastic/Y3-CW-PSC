@@ -74,13 +74,13 @@ class VectorArray {
  * each pointer represents one molecule/particle/body.
  */
 VectorArray* x;
-VectorArray* x_step;
+VectorArray* x_half;
 
 /**
  * Equivalent to x storing the velocities.
  */
 VectorArray* v;
-VectorArray* v_step;
+VectorArray* v_half;
 
 /**
  * One mass entry per molecule/particle.
@@ -108,7 +108,6 @@ double   minDx;
  * Force experienced by a particle.
  */
 VectorArray* force;
-VectorArray* force_step;
 
 
 
@@ -116,9 +115,9 @@ VectorArray* force_step;
 #define V(a,b) (*v)(a,b)
 #define FORCE(a,b) (*force)(a,b)
 
-#define X_STEP(a,b) (*x_step)(a,b)
-#define V_STEP(a,b) (*v_step)(a,b)
-#define FORCE_STEP(a,b) (*force_step)(a,b)
+#define X_HALF(a,b) (*x_half)(a,b)
+#define V_HALF(a,b) (*v_half)(a,b)
+
 
 
 /**
@@ -142,9 +141,8 @@ void setUp(int argc, char** argv) {
   v = new VectorArray(NumberOfBodies);
   force = new VectorArray(NumberOfBodies);
 
-  x_step = new VectorArray(NumberOfBodies);
-  v_step = new VectorArray(NumberOfBodies);
-  force_step = new VectorArray(NumberOfBodies);
+  x_half = new VectorArray(NumberOfBodies);
+  v_half = new VectorArray(NumberOfBodies);
 
   
 
@@ -331,8 +329,8 @@ inline void takeFirstStep(){
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
         double f = (X(j, dim)-X(i, dim)) * invarient;
-        FORCE_STEP(i, dim) += f;
-        FORCE_STEP(j, dim) -= f;
+        FORCE(i, dim) += f;
+        FORCE(j, dim) -= f;
       }
       
     }
@@ -340,8 +338,8 @@ inline void takeFirstStep(){
     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      X_STEP(i, dim) = X(i, dim) + halfTimeStepSize * V(i,dim);
-      V_STEP(i, dim) = V(i, dim) + halfTimeStepSize * FORCE_STEP(i, dim) / mass[i];
+      X_HALF(i, dim) = X(i, dim) + halfTimeStepSize * V(i,dim);
+      V_HALF(i, dim) = V(i, dim) + halfTimeStepSize * FORCE(i, dim) / mass[i];
     }
 
   }
@@ -353,9 +351,9 @@ inline void takeSecondStep(double & maxVSquared){
 
       /// Calculate i,j distance
       const double distance = sqrt(
-        SQUARED(X_STEP(i, 0)-X_STEP(j, 0)) +
-        SQUARED(X_STEP(i, 1)-X_STEP(j ,1)) +
-        SQUARED(X_STEP(i, 2)-X_STEP(j, 2))
+        SQUARED(X_HALF(i, 0)-X_HALF(j, 0)) +
+        SQUARED(X_HALF(i, 1)-X_HALF(j ,1)) +
+        SQUARED(X_HALF(i, 2)-X_HALF(j, 2))
       );
 
       // Calculate Forces
@@ -363,7 +361,7 @@ inline void takeSecondStep(double & maxVSquared){
 
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
-        double f = (X_STEP(j, dim)-X_STEP(i, dim)) * invarient;
+        double f = (X_HALF(j, dim)-X_HALF(i, dim)) * invarient;
         FORCE(i, dim) += f;
         FORCE(j, dim) -= f;
       }
@@ -373,7 +371,7 @@ inline void takeSecondStep(double & maxVSquared){
     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      X(i, dim) += timeStepSize * V_STEP(i,dim);
+      X(i, dim) += timeStepSize * V_HALF(i,dim);
       V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
     }
 
@@ -381,7 +379,7 @@ inline void takeSecondStep(double & maxVSquared){
   }
 }
 
-void printVector(VectorArray* array){
+void printVectorArray(VectorArray* array){
   for(int i=0; i<NumberOfBodies; i++){
     std::cout << "(" << (*array)(i, 0) << ", " << (*array)(i, 1) << ", " << (*array)(i, 2) << ")";
   }
@@ -402,27 +400,20 @@ void updateBody() {
   for(int i=0; i<NumberOfBodies; i++){
     for(int dim =0; dim<3; dim++){
      FORCE(i, dim) = 0.0;
-     FORCE_STEP(i, dim) = 0.0;
     }
   }
 
-  
-  /*std::cout << "Position: ";
-  printVector(x);
-  std::cout << "Velocity: ";
-  printVector(v);*/
+ 
   takeFirstStep();
 
-  /*std::cout << "Position HALF: ";
-  printVector(x_step);
-  std::cout << "Velocity HALF: ";
-  printVector(v_step);
-  std::cout << "Velocity HALF: ";
-  printVector(force_step);*/
-  takeSecondStep(maxVSquared);
-  /*std::cout << "Force: ";
-  printVector(force);*/
+  #pragma omp simd
+  for(int i=0; i<NumberOfBodies; i++){
+    for(int dim =0; dim<3; dim++){
+     FORCE(i, dim) = 0.0;
+    }
+  }
 
+  takeSecondStep(maxVSquared);
   mergeParticales(maxVSquared, minDxSquared);
   
 
