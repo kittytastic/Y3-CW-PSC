@@ -3,15 +3,15 @@ from Utils import *
 
 def TwoCollide():
     snap_shot_t = 1
-    final_t = 2
-    dt = 1
+    final_t = 3
+    dt = 0.001
     init_bodies = [
         Body((0,0,0), (0,0,0), 1.0),
-        Body((2e-3,0,0), (0,0,0), 1.0)
+        Body((2,0,0), (0,0,0), 1.0)
     ]
     sim_setup = SimArgs(snap_shot_t, final_t, dt, init_bodies)
 
-    final_bodies = [(1e-3, 0, 0)]
+    final_bodies = [(1, 0, 0)]
     expected_res = SimSolution(len(final_bodies), final_bodies, float(final_t)/float(dt), v_max=0, dx_min=math.inf)
 
     return {"setup": sim_setup, "expected":expected_res}
