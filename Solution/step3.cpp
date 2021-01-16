@@ -373,12 +373,19 @@ inline void takeSecondStep(double & maxVSquared){
     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      X(i, dim) += timeStepSize * V(i,dim);
+      X(i, dim) += timeStepSize * V_STEP(i,dim);
       V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
     }
 
     maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
   }
+}
+
+void printVector(VectorArray* array){
+  for(int i=0; i<NumberOfBodies; i++){
+    std::cout << "(" << (*array)(i, 0) << ", " << (*array)(i, 1) << ", " << (*array)(i, 2) << ")";
+  }
+  std::cout << std::endl;
 }
 
 /**
@@ -399,8 +406,22 @@ void updateBody() {
     }
   }
 
+  
+  /*std::cout << "Position: ";
+  printVector(x);
+  std::cout << "Velocity: ";
+  printVector(v);*/
   takeFirstStep();
+
+  /*std::cout << "Position HALF: ";
+  printVector(x_step);
+  std::cout << "Velocity HALF: ";
+  printVector(v_step);
+  std::cout << "Velocity HALF: ";
+  printVector(force_step);*/
   takeSecondStep(maxVSquared);
+  /*std::cout << "Force: ";
+  printVector(force);*/
 
   mergeParticales(maxVSquared, minDxSquared);
   
