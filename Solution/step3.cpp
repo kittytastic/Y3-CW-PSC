@@ -311,49 +311,23 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
   }
 }
 
-
-inline void takeFirstStep(){
-   for(int i=0; i<NumberOfBodies; i++){
-    for (int j=i+1; j<NumberOfBodies; j++) {
-
-      /// Calculate i,j distance
-      const double distance = sqrt(
-        SQUARED(X(i, 0)-X(j, 0)) +
-        SQUARED(X(i, 1)-X(j ,1)) +
-        SQUARED(X(i, 2)-X(j, 2))
-      );
-
-      // Calculate Forces
-      const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
-
-      #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
-      for(int dim=0; dim<3; dim++){
-        double f = (X(j, dim)-X(i, dim)) * invarient;
-        FORCE(i, dim) += f;
-        FORCE(j, dim) -= f;
-      }
-      
+inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, VectorArray& out_v, double timeStep){
+    // Zero forces array
+  #pragma omp simd
+  for(int i=0; i<NumberOfBodies; i++){
+    for(int dim =0; dim<3; dim++){
+     FORCE(i, dim) = 0.0;
     }
-
-    // Incremet x and v
-    #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
-    for(int dim=0; dim<3; dim++){
-      X_HALF(i, dim) = X(i, dim) + halfTimeStepSize * V(i,dim);
-      V_HALF(i, dim) = V(i, dim) + halfTimeStepSize * FORCE(i, dim) / mass[i];
-    }
-
   }
-}
 
-inline void takeSecondStep(){
    for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
       /// Calculate i,j distance
       const double distance = sqrt(
-        SQUARED(X_HALF(i, 0)-X_HALF(j, 0)) +
-        SQUARED(X_HALF(i, 1)-X_HALF(j ,1)) +
-        SQUARED(X_HALF(i, 2)-X_HALF(j, 2))
+        SQUARED(in_x(i, 0)-in_x(j, 0)) +
+        SQUARED(in_x(i, 1)-in_x(j ,1)) +
+        SQUARED(in_x(i, 2)-in_x(j, 2))
       );
 
       // Calculate Forces
@@ -361,7 +335,7 @@ inline void takeSecondStep(){
 
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
-        double f = (X_HALF(j, dim)-X_HALF(i, dim)) * invarient;
+        double f = (in_x(j, dim)-in_x(i, dim)) * invarient;
         FORCE(i, dim) += f;
         FORCE(j, dim) -= f;
       }
@@ -371,8 +345,8 @@ inline void takeSecondStep(){
     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      X(i, dim) += timeStepSize * V_HALF(i,dim);
-      V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
+      out_x(i, dim) = X(i, dim) + timeStep * in_v(i, dim);
+      out_v(i, dim) = V(i, dim) + timeStep * FORCE(i, dim) / mass[i];
     }
 
     
@@ -401,27 +375,8 @@ void updateBody() {
   double maxVSquared   = 0.0;
   double minDxSquared  = std::numeric_limits<double>::max();
 
-
-  (*x)(1,1);
-  // Zero forces array
-  #pragma omp simd
-  for(int i=0; i<NumberOfBodies; i++){
-    for(int dim =0; dim<3; dim++){
-     FORCE(i, dim) = 0.0;
-    }
-  }
-
- 
-  takeFirstStep();
-
-  #pragma omp simd
-  for(int i=0; i<NumberOfBodies; i++){
-    for(int dim =0; dim<3; dim++){
-     FORCE(i, dim) = 0.0;
-    }
-  }
-
-  takeSecondStep();
+  takeStep(*x, *v, *x_half, *v_half, halfTimeStepSize);
+  takeStep(*x_half, *v_half, *x, *v, timeStepSize);
   setMaxV(maxVSquared);
   mergeParticales(maxVSquared, minDxSquared);
   
