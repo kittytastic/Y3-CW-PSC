@@ -320,8 +320,10 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
     }
   }
 
-   for(int i=0; i<NumberOfBodies; i++){
-    for (int j=i+1; j<NumberOfBodies; j++) {
+  #pragma omp parallel for
+  for(int i=0; i<NumberOfBodies; i++){
+    for (int j=0; j<NumberOfBodies; j++) {
+      if(i==j) continue;
 
       /// Calculate i,j distance
       const double distance = sqrt(
@@ -337,20 +339,24 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
       for(int dim=0; dim<3; dim++){
         double f = (in_x(j, dim)-in_x(i, dim)) * invarient;
         FORCE(i, dim) += f;
-        FORCE(j, dim) -= f;
       }
       
     }
 
-    // Incremet x and v
+     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
       out_x(i, dim) = X(i, dim) + timeStep * in_v(i, dim);
       out_v(i, dim) = V(i, dim) + timeStep * FORCE(i, dim) / mass[i];
-    }
+    }  
 
-    
   }
+
+  /*
+  #pragma omp parallel for
+  for(int i=0; i<NumberOfBodies; i++){
+   
+  }*/
 }
 
 inline void setMaxV(double & maxVSquared){
@@ -375,7 +381,11 @@ void updateBody() {
   double maxVSquared   = 0.0;
   double minDxSquared  = std::numeric_limits<double>::max();
 
+  //printVectorArray(x);
+  //printVectorArray(v);
   takeStep(*x, *v, *x_half, *v_half, halfTimeStepSize);
+  //printVectorArray(x_half);
+  //printVectorArray(v_half);
   takeStep(*x_half, *v_half, *x, *v, timeStepSize);
   setMaxV(maxVSquared);
   mergeParticales(maxVSquared, minDxSquared);
