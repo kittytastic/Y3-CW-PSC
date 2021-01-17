@@ -24,8 +24,12 @@ source /opt/intel/oneapi/setvars.sh
 ~/intel/ProfilerAgent/vtune-agent --owner passphrase_authenticated_user
 ```
 
+## OMP settings
+```
+export OMP_NUM_THREADS=8
+```
 
-
+## Runge-Kutta info
 https://www.ctcms.nist.gov/~langer/oof2man/RegisteredClass-RK2.html
 https://www.ctcms.nist.gov/~langer/oof2man/RegisteredClass-ForwardEuler.html#Eqn-Augmented
 https://web.mit.edu/10.001/Web/Course_Notes/Differential_Equations_Notes/node5.html
