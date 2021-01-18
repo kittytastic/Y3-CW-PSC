@@ -67,7 +67,7 @@ if __name__ =="__main__":
 
     compiler_call = "g++ -O3 -fopenmp"
     if args.intel:
-        compiler_call = "icpx -O3 --std=c++0x"
+        compiler_call = "icpx -O3 -fopenmp --std=c++0x"
 
     if not compile(str(args.file_name), bin_file_name, compiler_call=compiler_call): 
         exit()
