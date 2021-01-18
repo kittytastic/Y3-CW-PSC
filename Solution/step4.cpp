@@ -62,8 +62,6 @@ class VectorArray {
     }
 
     double & operator()(int x, int y){
-      // %15 many loads and stuff
-      // leaq -> movq -> vmovupdx -> vmovupdx -> vmovsdq
       return (*data[x])._[y];
     };
 };
@@ -406,7 +404,7 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
       );
 
       // Calculate Forces
-      const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
+      const double invarient = (mass[j])/(distance*distance*distance);
 
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
@@ -420,16 +418,11 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
       out_x(i, dim) = X(i, dim) + timeStep * in_v(i, dim);
-      out_v(i, dim) = V(i, dim) + timeStep * FORCE(i, dim) / mass[i];
+      out_v(i, dim) = V(i, dim) + timeStep * FORCE(i, dim);
     }  
 
   }
 
-  /*
-  #pragma omp parallel for
-  for(int i=0; i<NumberOfBodies; i++){
-   
-  }*/
 }
 
 inline void setMaxV(double & maxVSquared){
