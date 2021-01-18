@@ -121,6 +121,7 @@ class SpeedTestCase(GeneralTestCase):
         super(SpeedTestCase, self).__init__(name, desc, self.test)
         desc = test_description()
         self.setup = desc["setup"]
+        self.cluster = "cluster" in desc
         
 
     def test(self, bin_name):
@@ -142,7 +143,14 @@ class SpeedTestCase(GeneralTestCase):
             return (False, "Test ran for %.3fs\n%s"%(elapsed, runtime_res[1]))        
 
         results = parseResultFiles()
-        if results.num_bodies < len(self.setup.bodies) * 0.8:
+
+        requirement = False
+        if self.cluster:
+            requirement = len(self.setup.bodies) < results.num_bodies * 0.5
+        else:
+            requirement = results.num_bodies < len(self.setup.bodies) * 0.8
+
+        if requirement:
             return (False, "(%.2fs) Speed test collapsed to %d bodies"%(elapsed, results.num_bodies))
     
         return (True, "   ✔️   (%.2fs)"%(elapsed))

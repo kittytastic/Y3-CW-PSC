@@ -76,3 +76,15 @@ def UltraFineGalaxy():
     return {"setup":sim_setup}
 
 UltraFineGalaxySpeedTest = SpeedTestCase("Ultra Fine grain speed", "Low bodies at small ts", UltraFineGalaxy)
+
+def ClusterF():
+    snap_shot_t = 0.1
+    final_t = 10
+    dt = 0.002
+
+    bodies = randomBodies(500, 60, 4, 5)
+    sim_setup = SimArgs(snap_shot_t, final_t, dt, bodies)
+
+    return {"setup":sim_setup, "cluster":True}
+
+ClusterFSpeedTest = SpeedTestCase("Cluster F speed", "Low bodies at small ts", ClusterF)

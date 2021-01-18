@@ -18,7 +18,7 @@ testSuites = {
     "live": [ShortMoveDiagTest],
     "collide": [StandingCubeColide],
     "gen": [FiftyBodyTest],
-    "quick_speed": [QuickGalaxySpeedTest, MediumGalaxySpeedTest, FineGalaxySpeedTest, UltraFineGalaxySpeedTest],
+    "quick_speed": [QuickGalaxySpeedTest, MediumGalaxySpeedTest, ClusterFSpeedTest, FineGalaxySpeedTest, UltraFineGalaxySpeedTest],
     "speed": [QuickGalaxySpeedTest, FineGalaxySpeedTest, HugeGalaxySpeedTest],
     "broken": [TwoBodyOrbitTest]
 }
