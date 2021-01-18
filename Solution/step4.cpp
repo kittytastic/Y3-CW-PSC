@@ -274,15 +274,15 @@ inline void filterMerge(double& minDxSquared){
   }
 
   const double C = 10e-2;
-  double loopMinDX = std::numeric_limits<double>::max();
+  //double loopMinDX = std::numeric_limits<double>::max();
 
-  #pragma omp parallel for reduction(min:loopMinDX) schedule(static, 1)
+  #pragma omp for reduction(min:minDxSquared) schedule(static, 1)
   for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
       /// Calculate i,j distance
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
-      loopMinDX = std::min( loopMinDX, distanceSquared );
+      minDxSquared = std::min( minDxSquared, distanceSquared );
 
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
         potentialCollision[i] = true;
@@ -292,7 +292,7 @@ inline void filterMerge(double& minDxSquared){
     }
   }
 
-  minDxSquared = std::min(minDxSquared, loopMinDX);
+  //minDxSquared = std::min(minDxSquared, loopMinDX);
 
 }
 
@@ -392,7 +392,7 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
 inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, VectorArray& out_v, double timeStep){
   // Zero forces array
 
-  #pragma omp parallel for
+  #pragma omp for
   for(int i=0; i<NumberOfBodies; i++){
     double * l_force = (*force)[i];
     #pragma omp simd aligned(l_force:CACHE_LINE)
@@ -442,6 +442,7 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
 }
 
 inline void setMaxV(double & maxVSquared){
+  //#pragma omp for reduction(max:maxVSquared)
   for(int i =0; i<NumberOfBodies; i++){
     maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
   }
@@ -465,14 +466,18 @@ void updateBody() {
 
   //printVectorArray(x);
   //printVectorArray(v);
-  takeStep(*x, *v, *x_half, *v_half, halfTimeStepSize);
+  #pragma omp parallel
+  {
+    takeStep(*x, *v, *x_half, *v_half, halfTimeStepSize);
   //printVectorArray(x_half);
   //printVectorArray(v_half);
-  takeStep(*x_half, *v_half, *x, *v, timeStepSize);
-  setMaxV(maxVSquared);
-  filterMerge(minDxSquared);
-  mergeParticales(maxVSquared, minDxSquared);
+    takeStep(*x_half, *v_half, *x, *v, timeStepSize);
+    filterMerge(minDxSquared);
+  }
+    mergeParticales(maxVSquared, minDxSquared);
+    setMaxV(maxVSquared);
   
+ 
 
   t += timeStepSize;
   maxV = std::sqrt(maxVSquared);
