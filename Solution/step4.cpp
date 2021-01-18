@@ -43,26 +43,29 @@ struct alignas(CACHE_LINE) AlignedTriple {
 class VectorArray {
   private:
     size_t length;
-    AlignedTriple ** data;
+    //AlignedTriple ** data;
+    double * data;
   public:
     VectorArray(size_t length){
         this->length = length;
-        data = new AlignedTriple*[length];
-        for(size_t i = 0; i<length; i++){
-          data[i] = new AlignedTriple();
-        }
+        //data = new AlignedTriple*[length];
+        //for(size_t i = 0; i<length; i++){
+          //data[i] = new AlignedTriple();
+        //}
+        this->data = (double*)aligned_alloc(CACHE_LINE, length*CACHE_LINE);
     }
 
     ~VectorArray(){
-      for(size_t i=0; i<length; i++){
+      /*for(size_t i=0; i<length; i++){
         delete data[i];
-      }
+      }*/
 
       delete[] data;
     }
 
     double & operator()(int x, int y){
-      return (*data[x])._[y];
+      //return (*data[x])._[y];
+      return this->data[x*4+y];
     };
 };
 
@@ -391,6 +394,7 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
     for(int dim = 0; dim<3; dim++){
      FORCE(i, dim) = 0.0;
     }
+
     for (int j=0; j<NumberOfBodies; j++) {
       if(i==j) continue;
 
