@@ -49,6 +49,7 @@ if __name__ =="__main__":
     parser.add_argument("file_name")
     parser.add_argument("--type", dest="testType", help="Select a test type from: %s"%(",".join(testSuites.keys())),default="live" )
     parser.add_argument("-v", dest="verbose", help="Verbose", action='store_true')
+    parser.add_argument("--intel", dest="intel", help="Use Intel compiler", action='store_true')
 
     args = parser.parse_args()
     file_name = str(args.file_name)
@@ -61,7 +62,11 @@ if __name__ =="__main__":
     print("----------------------------")
     print("Target File: %s"%str(args.file_name))
 
-    if not compile(str(args.file_name), bin_file_name): 
+    compiler_call = "g++ -O3 -fopenmp"
+    if args.intel:
+        compiler_call = "icpx -O3 --std=c++0x"
+
+    if not compile(str(args.file_name), bin_file_name, compiler_call=compiler_call): 
         exit()
 
     if str(args.testType) not in testSuites:
