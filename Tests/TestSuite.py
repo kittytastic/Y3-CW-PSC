@@ -14,7 +14,7 @@ from SpeedTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, FiftyBodyTest, QuickGalaxy],
+    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, FiftyBodyTest, QuickGalaxySpeedTest],
     "live": [ShortMoveDiagTest],
     "collide": [StandingCubeColide],
     "gen": [FiftyBodyTest],
