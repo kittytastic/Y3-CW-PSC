@@ -276,10 +276,9 @@ inline void filterMerge(double& minDxSquared){
   const double C = 10e-2;
   double loopMinDX = std::numeric_limits<double>::max();
 
-  #pragma omp parallel for reduction(min:loopMinDX)
+  #pragma omp parallel for reduction(min:loopMinDX) schedule(static, 1)
   for(int i=0; i<NumberOfBodies; i++){
-    for (int j=0; j<NumberOfBodies; j++) {
-      if(i==j) continue;
+    for (int j=i+1; j<NumberOfBodies; j++) {
 
       /// Calculate i,j distance
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
