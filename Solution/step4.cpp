@@ -276,7 +276,7 @@ inline void filterMerge(double& minDxSquared){
   const double C = 10e-2;
   //double loopMinDX = std::numeric_limits<double>::max();
 
-  #pragma omp for reduction(min:minDxSquared) schedule(static, 1)
+  #pragma omp parallel for reduction(min:minDxSquared) schedule(static, 1)
   for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
@@ -472,8 +472,9 @@ void updateBody() {
   //printVectorArray(x_half);
   //printVectorArray(v_half);
     takeStep(*x_half, *v_half, *x, *v, timeStepSize);
-    filterMerge(minDxSquared);
   }
+    filterMerge(minDxSquared);
+  
     mergeParticales(maxVSquared, minDxSquared);
     setMaxV(maxVSquared);
   
