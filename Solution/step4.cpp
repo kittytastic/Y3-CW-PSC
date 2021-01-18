@@ -23,6 +23,7 @@
 
 
 #include <cmath>
+#include <vector>
 
 
 double t          = 0;
@@ -109,6 +110,9 @@ double   minDx;
  */
 VectorArray* force;
 
+bool * potentialCollision;
+int * pcMap;
+
 
 
 #define X(a,b) (*x)(a,b)
@@ -136,6 +140,8 @@ void setUp(int argc, char** argv) {
 
 
   mass = new double [NumberOfBodies];
+  potentialCollision = new bool [NumberOfBodies];
+  pcMap = new int [NumberOfBodies];
 
   x = new VectorArray(NumberOfBodies);
   v = new VectorArray(NumberOfBodies);
@@ -255,19 +261,75 @@ void printParaviewSnapshot() {
 #define PRINT_PARTICAL(i) printf("Partical[%d]: x(%f, %f, %f) v(%f, %f, %f) mass: %f\n", i, x[i][0], x[i][1], x[i][2], v[i][0], v[i][1], v[i][2], mass[i])
 
 
+inline void filterMerge(double& minDxSquared){
 
-inline void mergeParticales(double & maxVSquared, double &minDxSquared){
-    // Check and merge
-  int i=0;
+  for(int i=0; i<NumberOfBodies; i++){
+    potentialCollision[i] = false;
+  }
+
   const double C = 10e-2;
-  while(i<NumberOfBodies){
-    int j = i+1;
-    bool merged = false;
-    while( j<NumberOfBodies && !merged){
+  double loopMinDX = std::numeric_limits<double>::max();
+
+  #pragma omp parallel for reduction(min:loopMinDX)
+  for(int i=0; i<NumberOfBodies; i++){
+    for (int j=0; j<NumberOfBodies; j++) {
+      if(i==j) continue;
+
+      /// Calculate i,j distance
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
-      minDxSquared = std::min( minDxSquared, distanceSquared );
+      loopMinDX = std::min( loopMinDX, distanceSquared );
 
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
+        potentialCollision[i] = true;
+        potentialCollision[j] = true;
+      }
+
+    }
+  }
+
+  minDxSquared = std::min(minDxSquared, loopMinDX);
+
+}
+
+bool isIn(int*list, int&length, int item, int&returnV){
+  for(int i=item; i<length; i++){
+    if(item==list[i]){
+      returnV = i;
+      return true;
+    }
+  }
+
+  return false;
+} 
+
+inline void mergeParticales(double & maxVSquared, double &minDxSquared){
+  
+  int pcCount = 0;
+   for(int i=0; i<NumberOfBodies; i++){
+     if(potentialCollision[i]){
+       pcMap[pcCount] = i;
+       pcCount ++;
+     }
+  }
+  
+  
+  
+  // Check and merge
+  int i=0;
+  const double C = 10e-2;
+  while(i<pcCount){
+    int j = i+1;
+    int s = pcMap[i];
+    int t = pcMap[j];
+    
+    bool merged = false;
+    // Check to end of list or until merged
+    while( j<pcCount && !merged){
+      
+      const double distanceSquared = SQUARED(X(s, 0)-X(t,0)) + SQUARED(X(s, 1)-X(t,1)) + SQUARED(X(s,2)-X(t,2));
+      minDxSquared = std::min( minDxSquared, distanceSquared );
+
+      if(distanceSquared<=SQUARED(C*(mass[t]+mass[s]))){
         merged = true;
         break;
       }else{
@@ -277,33 +339,44 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
 
     if(merged){
 
-      // Merge i and j into i
-      // V to tidy - no speed
-      V(i, 0) = (mass[i]*V(i, 0)+mass[j]*V(j, 0))/(mass[i]+mass[j]);
-      V(i, 1) = (mass[i]*V(i, 1)+mass[j]*V(j, 1))/(mass[i]+mass[j]);
-      V(i, 2) = (mass[i]*V(i, 2)+mass[j]*V(j, 2))/(mass[i]+mass[j]);
+      // Merge particales s and t into s
+      V(s, 0) = (mass[s]*V(s, 0)+mass[t]*V(t, 0))/(mass[s]+mass[t]);
+      V(s, 1) = (mass[s]*V(s, 1)+mass[t]*V(t, 1))/(mass[s]+mass[t]);
+      V(s, 2) = (mass[s]*V(s, 2)+mass[t]*V(t, 2))/(mass[s]+mass[t]);
       
-      X(i, 0) = (mass[i]*X(i, 0)+mass[j]*X(j, 0))/(mass[i]+mass[j]);
-      X(i, 1) = (mass[i]*X(i, 1)+mass[j]*X(j, 1))/(mass[i]+mass[j]);
-      X(i, 2) = (mass[i]*X(i, 2)+mass[j]*X(j, 2))/(mass[i]+mass[j]);
+      X(s, 0) = (mass[s]*X(s, 0)+mass[t]*X(t, 0))/(mass[s]+mass[t]);
+      X(s, 1) = (mass[s]*X(s, 1)+mass[t]*X(t, 1))/(mass[s]+mass[t]);
+      X(s, 2) = (mass[s]*X(s, 2)+mass[t]*X(t, 2))/(mass[s]+mass[t]);
 
-      mass[i] = mass[i]+mass[j];
+      mass[s] = mass[s]+mass[t];
 
-      maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
-
-      // Move last body into j and decrement body count
+      maxVSquared = std::max( maxVSquared, ( SQUARED(V(s, 0)) + SQUARED(V(s, 1)) + SQUARED(V(s, 2))));
+      
+      // Remove t by swapping in the last particle
       int lastBody = NumberOfBodies - 1;
-      V(j, 0) = V(lastBody, 0);
-      V(j, 1) = V(lastBody, 1);
-      V(j, 2) = V(lastBody, 2);
-
-      X(j, 0) = X(lastBody, 0);
-      X(j, 1) = X(lastBody, 1);
-      X(j, 2) = X(lastBody, 2);
       
-      mass[j] = mass[lastBody];
+      V(t, 0) = V(lastBody, 0);
+      V(t, 1) = V(lastBody, 1);
+      V(t, 2) = V(lastBody, 2);
+
+      X(t, 0) = X(lastBody, 0);
+      X(t, 1) = X(lastBody, 1);
+      X(t, 2) = X(lastBody, 2);
+      
+      mass[t] = mass[lastBody];
 
       NumberOfBodies--;
+
+      // Remove t from map
+      pcMap[j] = pcMap[pcCount-1];
+      pcCount--; 
+
+      // If last body is in map update reference
+      int matchI;
+      if(isIn(pcMap, pcCount, lastBody, matchI)){
+        pcMap[matchI] = j;
+      }
+
 
     }else{
       i++;
@@ -388,6 +461,7 @@ void updateBody() {
   //printVectorArray(v_half);
   takeStep(*x_half, *v_half, *x, *v, timeStepSize);
   setMaxV(maxVSquared);
+  filterMerge(minDxSquared);
   mergeParticales(maxVSquared, minDxSquared);
   
 
