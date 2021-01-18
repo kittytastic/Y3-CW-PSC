@@ -115,6 +115,37 @@ class TestCase(GeneralTestCase):
             return (False, "%s(%.2fs) %s"%(verbose_adjustment, elapsed, str(e)))
         
         return (True, "%s   ✔️   (%.2fs)"%(verbose_adjustment, elapsed))
+
+class SpeedTestCase(GeneralTestCase):
+    def __init__(self, name, desc, test_description):
+        super(SpeedTestCase, self).__init__(name, desc, self.test)
+        desc = test_description()
+        self.setup = desc["setup"]
+        
+
+    def test(self, bin_name):
+        
+        args = self.setup.genArg()
+        
+        if os.environ.get("VERBOSE")=="T":
+            print()
+            print(args)
+        
+
+        t0 = time.time()
+        runtime_res = run_bin_with_args(bin_name, args)
+        t1 = time.time()
+
+        elapsed = t1-t0
+
+        if not runtime_res[0]:
+            return (False, "Test ran for %.3fs\n%s"%(elapsed, runtime_res[1]))        
+
+        results = parseResultFiles()
+        if results.num_bodies < len(self.setup.bodies) * 0.8:
+            return (False, "(%.2fs) Speed test collapsed to %d bodies"%(elapsed, results.num_bodies))
+    
+        return (True, "   ✔️   (%.2fs)"%(elapsed))
         
 
 

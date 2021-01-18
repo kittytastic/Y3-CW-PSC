@@ -10,13 +10,15 @@ from BasicTests import *
 from CollisionTests import *
 from ExperimentalTests import *
 from HybridTests import *
+from SpeedTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, FiftyBodyTest],
+    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, FiftyBodyTest, GalaxySpeedTest],
     "live": [ShortMoveDiagTest],
     "collide": [StandingCubeColide],
     "gen": [FiftyBodyTest],
+    "speed": [GalaxySpeedTest],
     "broken": [TwoBodyOrbitTest]
 }
 
