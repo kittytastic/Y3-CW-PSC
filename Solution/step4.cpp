@@ -383,16 +383,14 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
 }
 
 inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, VectorArray& out_v, double timeStep){
-    // Zero forces array
-  #pragma omp simd
-  for(int i=0; i<NumberOfBodies; i++){
-    for(int dim =0; dim<3; dim++){
-     FORCE(i, dim) = 0.0;
-    }
-  }
+  // Zero forces array
 
   #pragma omp parallel for
   for(int i=0; i<NumberOfBodies; i++){
+    #pragma omp simd
+    for(int dim = 0; dim<3; dim++){
+     FORCE(i, dim) = 0.0;
+    }
     for (int j=0; j<NumberOfBodies; j++) {
       if(i==j) continue;
 
