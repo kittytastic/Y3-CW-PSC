@@ -35,6 +35,7 @@ int NumberOfBodies = 0;
 
 
 #define CACHE_LINE 64
+#define FLOAT_PER_CACHE_LINE CACHE_LINE/sizeof(double)
 struct alignas(CACHE_LINE) AlignedTriple {
   double _[3];
 };
@@ -65,8 +66,12 @@ class VectorArray {
 
     double & operator()(int x, int y){
       //return (*data[x])._[y];
-      return this->data[x*4+y];
+      return this->data[x*FLOAT_PER_CACHE_LINE+y];
     };
+
+    double * operator[](int x){
+      return this->data+FLOAT_PER_CACHE_LINE*x;
+    }
 };
 
 
@@ -390,37 +395,46 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
 
   #pragma omp parallel for
   for(int i=0; i<NumberOfBodies; i++){
-    #pragma omp simd
+    double * l_force = (*force)[i];
+    #pragma omp simd aligned(l_force:CACHE_LINE)
     for(int dim = 0; dim<3; dim++){
-     FORCE(i, dim) = 0.0;
+      l_force[dim] = 0.0;
     }
 
+    double * xi_in = in_x[i];
+    double * xi_out = out_x[i];
+    double * vi_in = in_v[i];
+    double * vi_out = out_v[i];
     for (int j=0; j<NumberOfBodies; j++) {
       if(i==j) continue;
 
+      double * xj_in = in_x[j];
+     
+
       /// Calculate i,j distance
       const double distance = sqrt(
-        SQUARED(in_x(i, 0)-in_x(j, 0)) +
-        SQUARED(in_x(i, 1)-in_x(j ,1)) +
-        SQUARED(in_x(i, 2)-in_x(j, 2))
+        SQUARED(xi_in[0]-xj_in[0]) +
+        SQUARED(xi_in[1]-xj_in[1]) +
+        SQUARED(xi_in[2]-xj_in[2])
       );
 
       // Calculate Forces
       const double invarient = (mass[j])/(distance*distance*distance);
 
-      #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
+      #pragma omp simd aligned(xi_in:CACHE_LINE) aligned(xj_in:CACHE_LINE) aligned(l_force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
-        double f = (in_x(j, dim)-in_x(i, dim)) * invarient;
-        FORCE(i, dim) += f;
+        double f = (xj_in[dim]-xi_in[dim]) * invarient;
+        //FORCE(i, dim) += f;
+        l_force[dim]+=f;;
       }
       
     }
 
      // Incremet x and v
-    #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
+    #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(l_force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      out_x(i, dim) = X(i, dim) + timeStep * in_v(i, dim);
-      out_v(i, dim) = V(i, dim) + timeStep * FORCE(i, dim);
+      xi_out[dim] = X(i, dim) + timeStep * vi_in[dim];
+      vi_out[dim] = V(i, dim) + timeStep * l_force[dim];
     }  
 
   }
