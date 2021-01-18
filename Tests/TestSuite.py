@@ -14,11 +14,12 @@ from SpeedTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, FiftyBodyTest, GalaxySpeedTest],
+    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, FiftyBodyTest, QuickGalaxy],
     "live": [ShortMoveDiagTest],
     "collide": [StandingCubeColide],
     "gen": [FiftyBodyTest],
-    "speed": [GalaxySpeedTest],
+    "quick_speed": [QuickGalaxySpeedTest, MediumGalaxySpeedTest, FineGalaxySpeedTest, UltraFineGalaxySpeedTest],
+    "speed": [QuickGalaxySpeedTest, FineGalaxySpeedTest, HugeGalaxySpeedTest],
     "broken": [TwoBodyOrbitTest]
 }
 
