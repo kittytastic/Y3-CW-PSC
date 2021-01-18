@@ -2,3 +2,10 @@ Working/*
 tmp/*
 **/__pycache__/
 .vscode/*
+
+Report/report.pdf
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.gz
