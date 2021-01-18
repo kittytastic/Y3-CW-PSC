@@ -31,25 +31,33 @@ jobs:
       - name: Prepare Directory
         run: mkdir tmp
 
+      - name: Make name
+        id: full_name
+        run: echo "::set-output name=name::${{env.Target_Name}}-${GITHUB_REF##*/}.zip"
+      
+      - name: What is name
+        run: echo ${{steps.full_name.outputs.full_name}}
+
       - name: Copy Files
         run:  cp ${{env.Files}} ./tmp
 
       # LATEX
-      #- name: Build Latex
-      #  uses: xu-cheng/latex-action@v2
-      #  with:
-      #    root_file: |
-      #      Report/report.tex
+      - name: Build Latex
+        uses: xu-cheng/latex-action@v2
+        with:
+          root_file: |
+            Report/report.tex
 
-      #- name: Copy Data Report 
-      #  run:  cp report.pdf ./tmp/
-
+      - name: Copy Data Report 
+        run:  cp report.pdf ./tmp/
+        
       - name: Add Version File
-        run: printf 'Submission built on %s from:\ngit hash: %s\nversion: %s' '$(date +'%Y-%m-%d')' '${{ github.ref }}' '$GITHUB_SHA' >> VERSION.md
+        run: printf 'Submission auto-built at %s %s using \nVersion Tag:%s \nCommit Hash:%s' $(date +'%H:%M:%S %d-%m-%Y') ${GITHUB_REF##*/} $GITHUB_SHA >> VERSION.md
+        working-directory: ./tmp
 
       # ZIP final solution
       - name: ZIP Files
-        run: zip ${{env.Target_Name}}-${{ github.ref }}.zip *
+        run: zip ${{steps.full_name.outputs.name}} *
         working-directory: ./tmp
 
       
@@ -72,13 +80,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}  # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./tmp/${{env.Target_Name}}
-          asset_name: ${{env.Target_Name}}
+          asset_path: ./tmp/${{steps.full_name.outputs.name}}
+          asset_name: ${{steps.full_name.outputs.name}}
           asset_content_type: application/zip
-      
-      # Save temp artifacts
-      #- name: Save Artifact
-      #  uses: actions/upload-artifact@v2
-      #  with:
-      #    name: ${{env.Target_Name}}
-      #    path: ./tmp/${{env.Target_Name}}

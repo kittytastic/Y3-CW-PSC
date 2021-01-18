@@ -35,3 +35,16 @@ https://www.ctcms.nist.gov/~langer/oof2man/RegisteredClass-ForwardEuler.html#Eqn
 https://web.mit.edu/10.001/Web/Course_Notes/Differential_Equations_Notes/node5.html
 
 https://lpsa.swarthmore.edu/NumInt/NumIntSecond.html
+
+
+# CI
+To add a tag to a commit
+```
+git tag -a v0.1.1 -m "Test tag"
+```
+
+To push a tag to remote
+
+```
+git push origin v0.1.1
+```
