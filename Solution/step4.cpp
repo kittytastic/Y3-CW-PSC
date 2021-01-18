@@ -409,7 +409,6 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
 
       double * xj_in = in_x[j];
      
-
       /// Calculate i,j distance
       const double distance = sqrt(
         SQUARED(xi_in[0]-xj_in[0]) +
@@ -417,13 +416,13 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
         SQUARED(xi_in[2]-xj_in[2])
       );
 
+
       // Calculate Forces
       const double invarient = (mass[j])/(distance*distance*distance);
 
-      #pragma omp simd aligned(xi_in:CACHE_LINE) aligned(xj_in:CACHE_LINE) aligned(l_force:CACHE_LINE)
+      #pragma omp simd aligned(xi_in, xj_in, l_force:CACHE_LINE)
       for(int dim=0; dim<3; dim++){
         double f = (xj_in[dim]-xi_in[dim]) * invarient;
-        //FORCE(i, dim) += f;
         l_force[dim]+=f;;
       }
       
@@ -432,7 +431,7 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
     const double * main_xi = (*x)[i];
     const double * main_vi = (*v)[i];
     // Incremet x and v
-    #pragma omp simd aligned(xi_out:CACHE_LINE) aligned(main_xi:CACHE_LINE) aligned(vi_in:CACHE_LINE) aligned(vi_out:CACHE_LINE) aligned(main_vi:CACHE_LINE) aligned(l_force:CACHE_LINE)
+    #pragma omp simd aligned(xi_out, main_xi, vi_in, vi_out, main_vi, l_force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
       xi_out[dim] = main_xi[dim] + timeStep * vi_in[dim];
       vi_out[dim] = main_vi[dim] + timeStep * l_force[dim];
