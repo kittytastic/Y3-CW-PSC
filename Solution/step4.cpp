@@ -430,11 +430,13 @@ inline void takeStep(VectorArray& in_x, VectorArray& in_v, VectorArray& out_x, V
       
     }
 
-     // Incremet x and v
-    #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(l_force:CACHE_LINE)
+    const double * main_xi = (*x)[i];
+    const double * main_vi = (*v)[i];
+    // Incremet x and v
+    #pragma omp simd aligned(xi_out:CACHE_LINE) aligned(main_xi:CACHE_LINE) aligned(vi_in:CACHE_LINE) aligned(vi_out:CACHE_LINE) aligned(main_vi:CACHE_LINE) aligned(l_force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      xi_out[dim] = X(i, dim) + timeStep * vi_in[dim];
-      vi_out[dim] = V(i, dim) + timeStep * l_force[dim];
+      xi_out[dim] = main_xi[dim] + timeStep * vi_in[dim];
+      vi_out[dim] = main_vi[dim] + timeStep * l_force[dim];
     }  
 
   }
