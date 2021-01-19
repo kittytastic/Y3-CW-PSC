@@ -79,11 +79,9 @@ out_file_name = "Convergence.csv"
 if __name__ =="__main__":
 
     parser = argparse.ArgumentParser(description='Particles - Test Suite')
-    parser.add_argument("file_name")
     parser.add_argument("--intel", dest="intel", help="Use Intel compiler", action='store_true')
 
     args = parser.parse_args()
-    file_name = str(args.file_name)
     
 
     print("-----------------------------")
@@ -144,8 +142,8 @@ if __name__ =="__main__":
             plt.plot(dt_plot, diff_plot, color=sf_col[sf])
     plt.xlabel('k where $h=1/2^k$')
     plt.ylabel('$f_h(T)$')
-
     plt.yscale('log')
+    plt.title("Convergence") 
 
     plt.savefig('convergence.png')
 
