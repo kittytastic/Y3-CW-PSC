@@ -104,7 +104,7 @@ if __name__ =="__main__":
 
         
         
-        for cc in range(1, max_cores+1, step):
+        for cc in core_options:
             softPrint("Using %d cores... "%cc)
             elapsed, num_bodies = runConvergenceTest(sim_args, file_name, cc)
 
