@@ -94,7 +94,7 @@ if __name__ =="__main__":
     print("Conducting %d tests per seed"%(len(core_options)))
     print("With cores counts of: %s"%core_options)
     
-
+    start_time = time.time()
     for i in range(2):
         print("------ Seed %d ------"%(i))
         sim_args = scenario[i](i, scaling)
@@ -115,11 +115,13 @@ if __name__ =="__main__":
             time_plot.append(speed_up)
             cores_plot.append(cc)
             
-            print("  ✔️  (%.2f)  remaining bodies: %d"%(elapsed, num_bodies))
+            print("  DONE  (%.2f)  remaining bodies: %d"%(elapsed, num_bodies))
             
 
         plt.plot(cores_plot, time_plot, color=seed_col[i])
-
+    end_time = time.time()
+    total_time = end_time-start_time
+    print("Total runtime %.2fs"%(total_time))
     
     plt.xlabel('cores')
     plt.ylabel('time')
