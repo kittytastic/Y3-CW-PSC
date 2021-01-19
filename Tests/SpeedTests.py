@@ -1,8 +1,8 @@
 from Utils import *
 import random
-def randomBodies(num_bodies, world_bounds, v_bounds, m_bounds):
+def randomBodies(num_bodies, world_bounds, v_bounds, m_bounds, r_seed=42):
 
-    random.seed(42)
+    random.seed(r_seed)
     scaleX = lambda x: (x-0.5)*world_bounds
     scaleV = lambda x: (x-0.5)*v_bounds
     scaleM = lambda x: x*m_bounds
