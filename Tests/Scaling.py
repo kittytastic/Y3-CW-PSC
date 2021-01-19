@@ -34,10 +34,11 @@ def runConvergenceTest(sim_args, bin_name, core_count):
         print("ERROR: Test ran for %.3fs\n%s"%(elapsed, runtime_res[1]))
         raise Exception("There was a runtime error")
 
-    return elapsed
+    num_bodies = int(runtime_res[1].split('\n')[-3].split(":")[1])
+    return (elapsed, num_bodies)
 
 def CreateBodies(seed, scale):
-    snap_shot_t = 1
+    snap_shot_t = 0
     final_t = 30
     dt = 0.001
 
@@ -49,7 +50,7 @@ def CreateBodies(seed, scale):
     return sim_setup
 
 def CreateBodies2(seed, scale):
-    snap_shot_t = 1
+    snap_shot_t = 0
     final_t = 3
     dt = 0.001
 
@@ -104,7 +105,7 @@ if __name__ =="__main__":
         
         for cc in range(1, max_cores+1, step):
             softPrint("Using %d cores... "%cc)
-            elapsed = runConvergenceTest(sim_args, file_name, cc)
+            elapsed, num_bodies = runConvergenceTest(sim_args, file_name, cc)
 
             if speed_1 == None:
                 speed_1 = elapsed
@@ -113,7 +114,7 @@ if __name__ =="__main__":
             time_plot.append(speed_up)
             cores_plot.append(cc)
             
-            print("  ✔️  (%.2f)"%(elapsed))
+            print("  ✔️  (%.2f)  remaining bodies: %d"%(elapsed, num_bodies))
             
 
         plt.plot(cores_plot, time_plot, color=seed_col[i])
