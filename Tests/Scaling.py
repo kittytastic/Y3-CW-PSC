@@ -12,7 +12,8 @@ from SpeedTests import randomBodies
 
 def run_bin(binary, split_args, env_args):
     #print(["./"+binary, *split_args])
-    processOut = subprocess.run(["./"+binary, *split_args], env=env_args, capture_output=True)
+    my_env = os.environ.copy()
+    processOut = subprocess.run(["./"+binary, *split_args], env={**my_env, **env_args}, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if processOut.returncode!=0:
         return (False, processOut.stderr.decode("utf-8"))
     else:
