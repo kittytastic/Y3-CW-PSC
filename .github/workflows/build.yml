@@ -35,8 +35,6 @@ jobs:
         id: full_name
         run: echo "::set-output name=name::${{env.Target_Name}}-${GITHUB_REF##*/}.zip"
       
-      - name: What is name
-        run: echo ${{steps.full_name.outputs.full_name}}
 
       - name: Copy Files
         run:  cp ${{env.Files}} ./tmp
