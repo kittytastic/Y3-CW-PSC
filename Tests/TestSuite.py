@@ -11,11 +11,12 @@ from CollisionTests import *
 from ExperimentalTests import *
 from HybridTests import *
 from SpeedTests import *
+from MetaTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, MovingThreeColideTest, OrbitThreeColideTest, MovingCubeColideTest, FiftyBodyTest],
-    "live": [MovingCubeColideTest],
+    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, MovingThreeColideTest, OrbitThreeColideTest, MovingCubeColideTest, FiftyBodyTest, MetaTest],
+    "live": [MetaTest],
     "collide": [StandingCubeColide],
     "gen": [FiftyBodyTest],
     "quick_speed": [QuickGalaxySpeedTest, MediumGalaxySpeedTest, ClusterFSpeedTest, FineGalaxySpeedTest, UltraFineGalaxySpeedTest],
