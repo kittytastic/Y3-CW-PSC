@@ -274,7 +274,6 @@ inline void filterMerge(double& minDxSquared){
   }
 
   const double C = 10e-2;
-  //double loopMinDX = std::numeric_limits<double>::max();
 
   #pragma omp parallel for reduction(min:minDxSquared) schedule(static, 1)
   for(int i=0; i<NumberOfBodies; i++){
@@ -282,17 +281,17 @@ inline void filterMerge(double& minDxSquared){
 
       /// Calculate i,j distance
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
-      minDxSquared = std::min( minDxSquared, distanceSquared );
+      
 
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
         potentialCollision[i] = true;
         potentialCollision[j] = true;
+      }else{
+        minDxSquared = std::min( minDxSquared, distanceSquared );
       }
 
     }
   }
-
-  //minDxSquared = std::min(minDxSquared, loopMinDX);
 
 }
 
@@ -317,8 +316,6 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
      }
   }
   
-  
-  
   // Check and merge
   int i=0;
   const double C = 10e-2;
@@ -331,14 +328,14 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
     // Check to end of list or until merged
     while( j<pcCount && !merged){
       
-      const double distanceSquared = SQUARED(X(s, 0)-X(t,0)) + SQUARED(X(s, 1)-X(t,1)) + SQUARED(X(s,2)-X(t,2));
-      minDxSquared = std::min( minDxSquared, distanceSquared );
+      const double distanceSquared = SQUARED(X(s, 0)-X(t,0)) + SQUARED(X(s, 1)-X(t,1)) + SQUARED(X(s,2)-X(t,2));   
 
       if(distanceSquared<=SQUARED(C*(mass[t]+mass[s]))){
         merged = true;
         break;
       }else{
         j++;
+        minDxSquared = std::min( minDxSquared, distanceSquared );
       }
     }
 
@@ -354,8 +351,6 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
       X(s, 2) = (mass[s]*X(s, 2)+mass[t]*X(t, 2))/(mass[s]+mass[t]);
 
       mass[s] = mass[s]+mass[t];
-
-      maxVSquared = std::max( maxVSquared, ( SQUARED(V(s, 0)) + SQUARED(V(s, 1)) + SQUARED(V(s, 2))));
       
       // Remove t by swapping in the last particle
       int lastBody = NumberOfBodies - 1;
@@ -464,17 +459,15 @@ void updateBody() {
   double maxVSquared   = 0.0;
   double minDxSquared  = std::numeric_limits<double>::max();
 
-  //printVectorArray(x);
-  //printVectorArray(v);
+
   #pragma omp parallel
   {
     takeStep(*x, *v, *x_half, *v_half, halfTimeStepSize);
-  //printVectorArray(x_half);
-  //printVectorArray(v_half);
     takeStep(*x_half, *v_half, *x, *v, timeStepSize);
   }
     filterMerge(minDxSquared);
   
+    
     mergeParticales(maxVSquared, minDxSquared);
     setMaxV(maxVSquared);
   
