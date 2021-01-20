@@ -38,7 +38,8 @@ struct alignas(CACHE_LINE) AlignedTriple {
   double _[3];
 };
 
-
+// Future me: Turns out an array of aligned structs could be an anti-patten and not creeate the desired alignment
+// This data-structure was reworked in step-4 
 class VectorArray {
   private:
     size_t length;
@@ -61,8 +62,6 @@ class VectorArray {
     }
 
     double & operator()(int x, int y){
-      // %15 many loads and stuff
-      // leaq -> movq -> vmovupdx -> vmovupdx -> vmovsdq
       return (*data[x])._[y];
     };
 };
@@ -74,12 +73,10 @@ class VectorArray {
  * each pointer represents one molecule/particle/body.
  */
 VectorArray* x;
-//VectorArray& x;
 /**
  * Equivalent to x storing the velocities.
  */
 VectorArray* v;
-//VectorArray& v;
 /**
  * One mass entry per molecule/particle.
  */
@@ -105,8 +102,6 @@ double   minDx;
  * Force experienced by a particle.
  */
 VectorArray* force;
-//VectorArray& force;
-
 
 #define X(a,b) (*x)(a,b)
 #define V(a,b) (*v)(a,b)
@@ -127,19 +122,10 @@ VectorArray* force;
 void setUp(int argc, char** argv) {
   NumberOfBodies = (argc-4) / 7;
 
-  //x    = new AlignedTriple*[NumberOfBodies];
-  //v    = new AlignedTriple*[NumberOfBodies];
   mass = new double [NumberOfBodies];
-
-  //force = new AlignedTriple*[NumberOfBodies];
-  
   x = new VectorArray(NumberOfBodies);
   v = new VectorArray(NumberOfBodies);
   force = new VectorArray(NumberOfBodies);
-
-  //x = *pX;
-  //v = *pV;
-  //force = *pForce;
 
   int readArgument = 1;
 
@@ -148,9 +134,6 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i=0; i<NumberOfBodies; i++) {
-    //x[i] = new AlignedTriple();
-    //v[i] = new AlignedTriple();
-    //force[i] = new AlignedTriple();
 
     X(i, 0) = std::stof(argv[readArgument]); readArgument++;
     X(i, 1) = std::stof(argv[readArgument]); readArgument++;
@@ -266,10 +249,10 @@ void updateBody() {
     }
   }
 
+  // Euler Step
   for(int i=0; i<NumberOfBodies; i++){
     for (int j=i+1; j<NumberOfBodies; j++) {
 
-      // FASTER - 7%
       /// Calculate i,j distance
       const double distance = sqrt(
         SQUARED(X(i, 0)-X(j, 0)) +
@@ -278,8 +261,6 @@ void updateBody() {
       );
 
       // Calculate Forces
-      // D^2? * D
-      // Remove div
       const double invarient = (mass[j]*mass[i])/(distance*distance*distance);
 
       #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
@@ -294,14 +275,9 @@ void updateBody() {
     // Incremet x and v
     #pragma omp simd aligned(x:CACHE_LINE) aligned(v:CACHE_LINE) aligned(force:CACHE_LINE)
     for(int dim=0; dim<3; dim++){
-      // 0.2%
       X(i, dim) += timeStepSize * V(i,dim);
-      // Remove div 4.5%
       V(i, dim) += timeStepSize * FORCE(i, dim) / mass[i];
     }
-
-    // 0.6%
-    maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
   }
 
   int i=0;
@@ -311,19 +287,13 @@ void updateBody() {
     bool merged = false;
     while( j<NumberOfBodies && !merged){
 
-      // V this %8
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
-      //const double distance = sqrt(dSquared);
-
-      // Yuck %7.2
-      minDxSquared = std::min( minDxSquared, distanceSquared );
-
-
-      // V yuck %8.5
+      
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
         merged = true;
         break;
       }else{
+        minDxSquared = std::min( minDxSquared, distanceSquared );
         j++;
       }
     }
@@ -331,7 +301,6 @@ void updateBody() {
     if(merged){
 
       // Merge i and j into i
-      // V to tidy - no speed
       V(i, 0) = (mass[i]*V(i, 0)+mass[j]*V(j, 0))/(mass[i]+mass[j]);
       V(i, 1) = (mass[i]*V(i, 1)+mass[j]*V(j, 1))/(mass[i]+mass[j]);
       V(i, 2) = (mass[i]*V(i, 2)+mass[j]*V(j, 2))/(mass[i]+mass[j]);
@@ -341,8 +310,6 @@ void updateBody() {
       X(i, 2) = (mass[i]*X(i, 2)+mass[j]*X(j, 2))/(mass[i]+mass[j]);
 
       mass[i] = mass[i]+mass[j];
-
-      maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
 
       // Move last body into j and decrement body count
       int lastBody = NumberOfBodies - 1;
@@ -363,16 +330,13 @@ void updateBody() {
     }
   }
   
+  for(int i=0; i<NumberOfBodies; i++){
+    maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
+  }
 
   t += timeStepSize;
 
-  //maxV   = 0.0;
-  //minDx  = std::numeric_limits<double>::max();
-
-  //maxV = std::max(std::sqrt(maxVSquared), maxV);
   maxV = std::sqrt(maxVSquared);
-  //minDx = std::min(std::sqrt(minDxSquared), minDx);
-  //printf("minDX %f\n",(maxVSquared));
   minDx = minDxSquared==std::numeric_limits<double>::max()?std::numeric_limits<double>::max():std::sqrt(minDxSquared);
 
 }
