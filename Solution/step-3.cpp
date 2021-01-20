@@ -265,12 +265,12 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
     bool merged = false;
     while( j<NumberOfBodies && !merged){
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
-      minDxSquared = std::min( minDxSquared, distanceSquared );
-
+      
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
         merged = true;
         break;
       }else{
+        minDxSquared = std::min( minDxSquared, distanceSquared );
         j++;
       }
     }
@@ -278,7 +278,6 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
     if(merged){
 
       // Merge i and j into i
-      // V to tidy - no speed
       V(i, 0) = (mass[i]*V(i, 0)+mass[j]*V(j, 0))/(mass[i]+mass[j]);
       V(i, 1) = (mass[i]*V(i, 1)+mass[j]*V(j, 1))/(mass[i]+mass[j]);
       V(i, 2) = (mass[i]*V(i, 2)+mass[j]*V(j, 2))/(mass[i]+mass[j]);
@@ -288,8 +287,6 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
       X(i, 2) = (mass[i]*X(i, 2)+mass[j]*X(j, 2))/(mass[i]+mass[j]);
 
       mass[i] = mass[i]+mass[j];
-
-      maxVSquared = std::max( maxVSquared, ( SQUARED(V(i, 0)) + SQUARED(V(i, 1)) + SQUARED(V(i, 2))));
 
       // Move last body into j and decrement body count
       int lastBody = NumberOfBodies - 1;
@@ -377,9 +374,9 @@ void updateBody() {
 
   takeStep(*x, *v, *x_half, *v_half, halfTimeStepSize);
   takeStep(*x_half, *v_half, *x, *v, timeStepSize);
-  setMaxV(maxVSquared);
-  mergeParticales(maxVSquared, minDxSquared);
   
+  mergeParticales(maxVSquared, minDxSquared);
+  setMaxV(maxVSquared);
 
   t += timeStepSize;
   maxV = std::sqrt(maxVSquared);
