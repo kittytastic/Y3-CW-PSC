@@ -124,7 +124,7 @@ if __name__ =="__main__":
     print("Total runtime %.2fs"%(total_time))
     
     plt.xlabel('cores')
-    plt.ylabel('time')
+    plt.ylabel('scaling')
     plt.title("Scaling") 
 
     plt.savefig('scaling.png')
