@@ -247,7 +247,6 @@ void updateBody() {
     v[i][1] = v[i][1] + timeStepSize * force1[i] / mass[i];
     v[i][2] = v[i][2] + timeStepSize * force2[i] / mass[i];
 
-    maxVSquared = std::max( maxVSquared, ( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2])));
   }
 
   int i=0;
@@ -257,14 +256,12 @@ void updateBody() {
     bool merged = false;
     while( j<NumberOfBodies && !merged){
       const double distanceSquared = SQUARED(x[i][0]-x[j][0]) + SQUARED(x[i][1]-x[j][1]) + SQUARED(x[i][2]-x[j][2]);
-      //const double distance = sqrt(dSquared);
-
-      minDxSquared = std::min( minDxSquared, distanceSquared );
 
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
         merged = true;
         break;
       }else{
+        minDxSquared = std::min( minDxSquared, distanceSquared );
         j++;
       }
     }
@@ -281,8 +278,6 @@ void updateBody() {
       x[i][2] = (mass[i]*x[i][2]+mass[j]*x[j][2])/(mass[i]+mass[j]);
 
       mass[i] = mass[i]+mass[j];
-
-      maxVSquared = std::max( maxVSquared, ( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2]) ));
 
       // Move last body into j and decrement body count
       int lastBody = NumberOfBodies - 1;
@@ -303,18 +298,15 @@ void updateBody() {
     }
   }
   
+  for(int i=0; i<NumberOfBodies; i++){
+    maxVSquared = std::max( maxVSquared, ( SQUARED(v[i][0]) + SQUARED(v[i][1]) + SQUARED(v[i][2])));
+  }
 
   t += timeStepSize;
 
-  //maxV   = 0.0;
-  //minDx  = std::numeric_limits<double>::max();
-
-  //maxV = std::max(std::sqrt(maxVSquared), maxV);
+  
   maxV = std::sqrt(maxVSquared);
-  //minDx = std::min(std::sqrt(minDxSquared), minDx);
-  //printf("minDX %f\n",(maxVSquared));
   minDx = minDxSquared==std::numeric_limits<double>::max()?std::numeric_limits<double>::max():std::sqrt(minDxSquared);
-
 }
 
 
