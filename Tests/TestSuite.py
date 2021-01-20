@@ -15,7 +15,7 @@ from MetaTests import *
 
 
 testSuites = {
-    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, MovingThreeColideTest, OrbitThreeColideTest, MovingCubeColideTest, FiftyBodyTest, MetaTest],
+    "full": [MoveRightTest, ShortMoveDiagTest, StationaryColide, StandingCubeColide, MovingThreeColideTest, OrbitThreeColideTest, MovingCubeColideTest, FiftyBodyTest, PartialCollapseTest, MetaTest],
     "live": [MetaTest],
     "collide": [StandingCubeColide],
     "gen": [FiftyBodyTest],
