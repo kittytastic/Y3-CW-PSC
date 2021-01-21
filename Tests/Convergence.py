@@ -5,6 +5,7 @@ import subprocess
 import shlex
 import argparse
 import matplotlib.pyplot as plt
+import random
 
 from Utils import *
 from SpeedTests import randomBodies
@@ -48,7 +49,7 @@ def runConvergenceTest(sim_args):
         
     # Get final v_max and dx_max from stdout 
     runtime_out = runtime_res[1].split("\n")
-    #print(runtime_out)
+    #print(runtime_res[1])
     last_obj = [ float(i) for i in runtime_out[-2].split(":")[1].split(',')]
     final_out = runtime_out[-4]
     final_out = final_out.split(",")
@@ -61,18 +62,34 @@ def runConvergenceTest(sim_args):
     return (last_obj, results, elapsed)
 
 def CreateBodies(seed):
-    snap_shot_t = 1
+    snap_shot_t = 15
     final_t = 30
     dt = None
 
     init_bodies = randomBodies(50, 100, 10, 10, r_seed=seed)
 
     sim_setup = SimArgs(snap_shot_t, final_t, dt, init_bodies)
-    
-
-    
 
     return sim_setup
+
+
+def Meta(seed, final_t):
+    snap_shot_t = 1
+    dt = None
+
+    random.seed(seed)
+    x = random.random()*10 + 1
+
+    init_bodies = [
+        Body((0,0, 0), (-0.707,-0.707,0), 1.0),
+        Body((0,0, x), (0.707,0.707,0), 1.0),
+    ]
+    sim_setup = SimArgs(snap_shot_t, final_t, dt, init_bodies)
+
+    
+    return sim_setup
+    
+    
 
 out_file_name = "Convergence.csv"
 
@@ -91,6 +108,7 @@ if __name__ =="__main__":
 
     sf_name = ["../Solution/step-1.cpp", "../Solution/step-3.cpp"]
     sf_col = ["r", "g"]
+    dt_min = 1e-5
 
     for sf in range(2):
         print()
@@ -103,13 +121,13 @@ if __name__ =="__main__":
         if not compile(sf_name[sf], bin_file_name, compiler_call=compiler_call): 
             exit()
 
-        for i in range(4):
+        for i in range(3):
             print("------ Seed %d ------"%(i))
-            sim_args = CreateBodies(i)
+            #sim_args = CreateBodies(i)
+            final_t = 30
+            sim_args = Meta(i, final_t)
             dt = 1
-            k=0
-            dt_min = 1e-4
-
+            
             dt_plot = []
             diff_plot = []
 
@@ -128,21 +146,21 @@ if __name__ =="__main__":
 
                 mag = math.sqrt(dx*dx + dy*dy + dz*dz)
                 
-                dt_plot.append(k)
+                dt_plot.append(final_t/dt)
                 diff_plot.append(mag)
 
                 last_x, last_y, last_z = x,y,z
 
                 print("  ✔️  (%.2f)  bodies: %d  mag: %.2e"%(elapsed, results.num_bodies, mag))
                 dt = dt/2
-                k+=1
 
             dt_plot.pop(0)
             diff_plot.pop(0)
-            plt.plot(dt_plot, diff_plot, color=sf_col[sf])
-    plt.xlabel('k where $h=1/2^k$')
-    plt.ylabel('$f_h(T)$')
+            plt.plot(dt_plot, diff_plot, '--', marker='.', color=sf_col[sf])
+    plt.xlabel('T/h')
+    plt.ylabel('$\Delta f_h(T)$')
     plt.yscale('log')
+    plt.xscale('log')
     plt.title("Convergence") 
 
     plt.savefig('convergence.png')
