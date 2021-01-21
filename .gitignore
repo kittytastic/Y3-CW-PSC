@@ -3,6 +3,7 @@ tmp/*
 **/__pycache__/
 .vscode/*
 
+DataAnalysis/*.png
 Report/report.pdf
 *.aux
 *.fdb_latexmk
