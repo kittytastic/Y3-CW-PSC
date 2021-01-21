@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-with open("./scaling.data", "r") as f:
+with open("./scaling4.data", "r") as f:
     raw = f.readlines()
     raw = ''.join(raw)
     raw_runs = raw.split("----------\n")
@@ -43,7 +43,7 @@ with open("./scaling.data", "r") as f:
         all_f.append(fs)
 
     plt.xlabel("cores")
-    plt.ylabel("f (from strong scaling model)")
+    plt.ylabel("f")
     plt.title("Analysis of f values assuming strong scaling")
     plt.savefig("f.png")
     
