@@ -42,14 +42,12 @@ jobs:
       # LATEX
       - name: Build Latex
         uses: xu-cheng/latex-action@v2
-        working_directory: ~/Report
+        working_directory: ./Report
         with:
-          root_file: |
-            report.tex
+          root_file: report.tex
 
       - name: Copy Data Report 
-        run:  cp report.pdf ~/tmp/
-        working-directory: ~/Report
+        run:  cp ./Report/report.pdf ./tmp/
         
       - name: Add Version File
         run: printf 'Submission auto-built at %s %s using \nVersion Tag:%s \nCommit Hash:%s' $(date +'%H:%M:%S %d-%m-%Y') ${GITHUB_REF##*/} $GITHUB_SHA >> VERSION.md
