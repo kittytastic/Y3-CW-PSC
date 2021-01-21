@@ -6,6 +6,7 @@ import shlex
 import argparse
 import matplotlib.pyplot as plt
 import random
+import numpy as np
 
 from Utils import *
 from SpeedTests import randomBodies
@@ -84,7 +85,7 @@ def Meta(seed, final_t):
         Body((0,0, 0), (-0.2,-0.1,2), 1.5),
         Body((0,0, x), (0.1,0,-2), 1.5),
     ]
-    
+
     sim_setup = SimArgs(snap_shot_t, final_t, dt, init_bodies)
 
     
@@ -108,10 +109,10 @@ if __name__ =="__main__":
     
 
     sf_name = ["../Solution/step-1.cpp", "../Solution/step-3.cpp"]
-    sf_col = ["r", "g"]
+    sf_col = ["C0", "C1"]
+    marker = [".", "^"]
     seeds=[0,2]
     dt_min = 1e-4
-
     for sf in range(2):
         print()
         print("Target File: %s"%sf_name[sf])
@@ -158,12 +159,20 @@ if __name__ =="__main__":
 
             dt_plot.pop(0)
             diff_plot.pop(0)
-            plt.plot(dt_plot, diff_plot, '--', marker='.', color=sf_col[sf])
+            plt.plot(dt_plot, diff_plot, marker[i], color=sf_col[sf])
+
+            z = np.polyfit(np.log10(dt_plot), np.log10(diff_plot), 1)
+            p = np.poly1d(z)
+            #plt.plot(dt_plot, 10**p(np.log10(dt_plot)), '--', color=sf_col[sf], label="y=%.2f %.2fx"%(z[1], z[0]))
+            plt.plot(dt_plot, 10**p(np.log10(dt_plot)), '--', color=sf_col[sf], label="gradient %.2f"%(z[0]))
+
+            print("y=%.2f %.2fx"%(z[1], z[0]))
     plt.xlabel('T/h')
-    plt.ylabel('$\Delta f_h(T)$')
+    plt.ylabel('$| f_h(T) - f_{h/2}(T) |$')
     plt.yscale('log')
     plt.xscale('log')
     plt.title("Convergence") 
+    plt.legend()
 
     plt.savefig('convergence.png')
 
