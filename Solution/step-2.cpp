@@ -254,6 +254,7 @@ void updateBody() {
     for (int j=i+1; j<NumberOfBodies; j++) {
 
       /// Calculate i,j distance
+      // SIMD reductions appear to be a detriment
       const double distance = sqrt(
         SQUARED(X(i, 0)-X(j, 0)) +
         SQUARED(X(i, 1)-X(j ,1)) +
@@ -286,7 +287,8 @@ void updateBody() {
     int j = i+1;
     bool merged = false;
     while( j<NumberOfBodies && !merged){
-
+      
+      // SIMD reductions appear to be a detriment
       const double distanceSquared = SQUARED(X(i, 0)-X(j,0)) + SQUARED(X(i, 1)-X(j,1)) + SQUARED(X(i,2)-X(j,2));
       
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
@@ -299,8 +301,9 @@ void updateBody() {
     }
 
     if(merged){
-
+ 
       // Merge i and j into i
+      // Very cold code, no point SIMD, undecided if this or SIMD looks better...
       V(i, 0) = (mass[i]*V(i, 0)+mass[j]*V(j, 0))/(mass[i]+mass[j]);
       V(i, 1) = (mass[i]*V(i, 1)+mass[j]*V(j, 1))/(mass[i]+mass[j]);
       V(i, 2) = (mass[i]*V(i, 2)+mass[j]*V(j, 2))/(mass[i]+mass[j]);
