@@ -9,17 +9,26 @@
 \newcommand{\biggbreak}{\\[1ex]}
 \usepackage[margin=1.5cm]{geometry}
 
+
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{qwrx21}
+\lhead{Report}
+\rfoot{\thepage}
   
 \begin{document}
+
 All data was collected from runs on a Hamilton par7.q node.
 
 Figure [Fig.\ref{fig:scaling}] shows the scaling characteristics of step 4 in terms of the number of bodies. 
-We see from [Fig.\ref{fig:scaling_sub}] that scenarios with over 1000 bodies scale well to Hamilton's 24 cores, whereas models using <1000 bodies scale less well. 
+We see from [Fig.\ref{fig:scaling_sub}] that scenarios with over 1000 bodies scale well to Hamilton's 24 cores, whereas models using $<$1000 bodies scale less well. 
 If we assume this is a strong scaling model, following $t(p) = f \cdot t(1) + (1-f)\cdot \frac{t(1)}{p}$, we can calculate constant $f$ for each data point [Fig.\ref{fig:scaling_f}]. We can see scenarios with $>=500$ bodies are modeled well by the strong scaling model as there is a low variance of $f$ estimations, giving evidence that $f$ is a constant. 
 However, the strong scaling model breaks down under $500$ bodies as $f$ is likely not constant. 
 I suspect this breakdown is caused by the overhead for OMP to create and synchronize threads. 
-This overhead is likely a function of the number of threads and would explain the slowdown for: $200$ bodies, $24$ cores.
-We also see that $f$ decreases with more bodies. In my implementation some calculations with runtime $O(n)$ are done series (where $n$ is number of bodies); However, all calculations with runtime $O(n^2)$ are done in parallel. Hence we would expect f to decrease as $O(n^2)$ dominates.
+This overhead is likely a function of the number of threads and could explain the speedup then slowdown for $200$ bodies.
+We also see that $f$ decreases with more bodies. In my implementation some of the calculations with runtime $O(n)$ are done in series (where $n$ is number of bodies); However, all calculations with runtime $O(n^2)$ are done in parallel. Hence we would expect f to decrease as $O(n^2)$ dominates.
 
 \begin{figure}[h!]
   \begin{center}
