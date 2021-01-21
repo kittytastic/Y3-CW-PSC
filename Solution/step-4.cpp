@@ -284,7 +284,9 @@ inline void filterMerge(double& minDxSquared){
       
 
       if(distanceSquared<=SQUARED(C*(mass[j]+mass[i]))){
+        #pragma omp atomic write
         potentialCollision[i] = true;
+        #pragma omp atomic write
         potentialCollision[j] = true;
       }else{
         minDxSquared = std::min( minDxSquared, distanceSquared );
