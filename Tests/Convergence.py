@@ -81,9 +81,10 @@ def Meta(seed, final_t):
     x = random.random()*10 + 1
 
     init_bodies = [
-        Body((0,0, 0), (-0.707,-0.707,0), 1.0),
-        Body((0,0, x), (0.707,0.707,0), 1.0),
+        Body((0,0, 0), (-0.2,-0.1,2), 1.5),
+        Body((0,0, x), (0.1,0,-2), 1.5),
     ]
+    
     sim_setup = SimArgs(snap_shot_t, final_t, dt, init_bodies)
 
     
@@ -108,7 +109,8 @@ if __name__ =="__main__":
 
     sf_name = ["../Solution/step-1.cpp", "../Solution/step-3.cpp"]
     sf_col = ["r", "g"]
-    dt_min = 1e-5
+    seeds=[0,2]
+    dt_min = 1e-4
 
     for sf in range(2):
         print()
@@ -121,11 +123,11 @@ if __name__ =="__main__":
         if not compile(sf_name[sf], bin_file_name, compiler_call=compiler_call): 
             exit()
 
-        for i in range(3):
+        for i in range(2):
             print("------ Seed %d ------"%(i))
             #sim_args = CreateBodies(i)
             final_t = 30
-            sim_args = Meta(i, final_t)
+            sim_args = Meta(seeds[i], final_t)
             dt = 1
             
             dt_plot = []
