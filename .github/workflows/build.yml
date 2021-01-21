@@ -42,8 +42,8 @@ jobs:
       # LATEX
       - name: Build Latex
         uses: xu-cheng/latex-action@v2
-        working_directory: ./Report
         with:
+          working_directory: ./Report
           root_file: report.tex
 
       - name: Copy Data Report 
