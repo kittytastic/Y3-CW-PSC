@@ -54,6 +54,7 @@ if __name__ =="__main__":
     parser.add_argument("--type", dest="testType", help="Select a test type from: %s"%(",".join(testSuites.keys())),default="live" )
     parser.add_argument("-v", dest="verbose", help="Verbose", action='store_true')
     parser.add_argument("--intel", dest="intel", help="Use Intel compiler", action='store_true')
+    parser.add_argument("--nomp", dest="nomp", help="Stop using omp", action='store_true')
 
     args = parser.parse_args()
     file_name = str(args.file_name)
@@ -65,11 +66,21 @@ if __name__ =="__main__":
     print("|    Running Test Suite    |")
     print("----------------------------")
     print("Target File: %s"%str(args.file_name))
+    print("Compiler: %s  OMP: %s"%("intel" if args.intel else "g++", "No" if args.nomp else "Yes"))
 
-    compiler_call = "g++ -O3 -fopenmp"
+
     if args.intel:
-        compiler_call = "icpx -O3 -fopenmp --std=c++0x"
+        if args.nomp:
+            compiler_call = "icpx -no-vec --std=c++0x"
+        else:
+            compiler_call = "icpx -O3 -fopenmp --std=c++0x"      
+    else:
+        if args.nomp:
+            compiler_call = "g++ -O3 -fno-tree-vectorize"
+        else:
+            compiler_call = "g++ -O3 -fopenmp"
 
+    print("Compiler call: %s"%compiler_call)
     if not compile(str(args.file_name), bin_file_name, compiler_call=compiler_call): 
         exit()
 
