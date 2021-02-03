@@ -71,6 +71,7 @@ double* force0;
 double* force1;
 double* force2;
 
+double C;
 
 /**
  * Set up scenario from the command line.
@@ -85,6 +86,7 @@ double* force2;
  */
 void setUp(int argc, char** argv) {
   NumberOfBodies = (argc-4) / 7;
+  C = 10e-2/NumberOfBodies;
 
   x    = new double*[NumberOfBodies];
   v    = new double*[NumberOfBodies];
@@ -250,7 +252,7 @@ void updateBody() {
   }
 
   int i=0;
-  const double C = 10e-2;
+  
   while(i<NumberOfBodies){
     int j = i+1;
     bool merged = false;

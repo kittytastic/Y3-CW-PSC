@@ -103,6 +103,8 @@ double   minDx;
  */
 VectorArray* force;
 
+double C;
+
 #define X(a,b) (*x)(a,b)
 #define V(a,b) (*v)(a,b)
 #define FORCE(a,b) (*force)(a,b)
@@ -121,6 +123,7 @@ VectorArray* force;
  */
 void setUp(int argc, char** argv) {
   NumberOfBodies = (argc-4) / 7;
+  C = 10e-2/NumberOfBodies;
 
   mass = new double [NumberOfBodies];
   x = new VectorArray(NumberOfBodies);
@@ -282,7 +285,7 @@ void updateBody() {
   }
 
   int i=0;
-  const double C = 10e-2;
+  
   while(i<NumberOfBodies){
     int j = i+1;
     bool merged = false;

@@ -108,7 +108,7 @@ double   minDx;
  * Force experienced by a particle.
  */
 VectorArray* force;
-
+double C;
 
 
 #define X(a,b) (*x)(a,b)
@@ -133,7 +133,7 @@ VectorArray* force;
  */
 void setUp(int argc, char** argv) {
   NumberOfBodies = (argc-4) / 7;
-
+  C = 10e-2/NumberOfBodies;
 
   mass = new double [NumberOfBodies];
 
@@ -259,7 +259,7 @@ void printParaviewSnapshot() {
 inline void mergeParticales(double & maxVSquared, double &minDxSquared){
     // Check and merge
   int i=0;
-  const double C = 10e-2;
+  
   while(i<NumberOfBodies){
     int j = i+1;
     bool merged = false;

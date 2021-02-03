@@ -118,7 +118,7 @@ VectorArray* force;
 
 bool * potentialCollision;
 int * pcMap;
-
+double C;
 
 
 #define X(a,b) (*x)(a,b)
@@ -143,6 +143,7 @@ int * pcMap;
  */
 void setUp(int argc, char** argv) {
   NumberOfBodies = (argc-4) / 7;
+  C = 10e-2/NumberOfBodies;
 
 
   mass = new double [NumberOfBodies];
@@ -273,7 +274,6 @@ inline void filterMerge(double& minDxSquared){
     potentialCollision[i] = false;
   }
 
-  const double C = 10e-2;
 
   #pragma omp parallel for reduction(min:minDxSquared) schedule(static, 1) if(NumberOfBodies>8)
   for(int i=0; i<NumberOfBodies; i++){
@@ -320,7 +320,7 @@ inline void mergeParticales(double & maxVSquared, double &minDxSquared){
   
   // Check and merge
   int i=0;
-  const double C = 10e-2;
+  
   while(i<pcCount){
     int j = i+1;
     int s = pcMap[i];
