@@ -69,7 +69,7 @@ OrbitThreeColideTest = TestCase("Orbit 3 Collision", "Test to see if 3 stationar
 def MovingCubeCollide():
     snap_shot_t = 1
     final_t = 10
-    dt = 0.01
+    dt = 0.001
 
     s = 2 
     init_bodies = [
